@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Đăng nhập</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+    <!-- Google -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+</head>
+
+<body class="logo-overlay">
+<div class="header-space">{% include "header.html" %}</div>
+
+
+<div class="bg-overlay"></div>
+
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="card shadow-lg p-4 bg-dark text-white login-card" 
+         style="width:380px;border-radius:20px;">
+
+        <h3 class="text-center mb-4 text-warning">Đăng nhập</h3>
+
+        <!-- Hiện alert Flask -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" name="email" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Mật khẩu</label>
+                
+                <div class="input-group position-relative"> 
+                    <input type="password" class="form-control" name="password" id="passwordInput" required>
+                    
+                    <span class="position-absolute end-0 top-50 translate-middle-y me-3" 
+                        style="cursor: pointer; z-index: 10; color: black;" 
+                        id="togglePassword">
+                        <i class="fa fa-eye-slash " aria-hidden="true"></i> 
+                    </span>
+                </div>
+            </div>
+
+            <button class="btn btn-secondary w-100">Đăng nhập</button>
+
+            <div class="text mt-3" style="justify-content: space-between; display: flex;">
+                <a href="/register" class="text-warning">Đăng ký</a>
+                <a href="/reset_password" class="text-warning">Quên mật khẩu</a>
+            </div>
+
+            <div class="text-center my-3">Hoặc</div>
+
+            <div class="google-login-container">
+                <div id="g_id_onload"
+                    data-client_id="326949134175-muq4egv1vofb5ln8dh1fov9vq6nkr25s.apps.googleusercontent.com"
+                    data-context="signin"
+                    data-ux_mode="popup"
+                    data-auto_prompt="false"
+                    data-callback="handleCredentialResponse">
+                </div>
+
+                <div class="g_id_signin"
+                    data-type="standard"
+                    data-size="large"
+                    data-theme="outline"
+                    data-text="sign_in_with"
+                    data-shape="pill"
+                    data-logo_alignment="left">
+                </div>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+<script>
+function handleCredentialResponse(response) {
+    fetch("/google-login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ credential: response.credential })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("SERVER RESPONSE:", data); // log trong đây
+        if (data.status === "ok") {
+            alert("Đăng nhập Google thành công!");
+            window.location.href = "/"; // chuyển trang
+        } else {
+            alert("Lỗi đăng nhập Google: " + (data.message || ""));
+        }
+    })
+    .catch(err => {
+        console.error("Fetch error:", err);
+        alert("Có lỗi khi kết nối server!");
+    });
+}
+
+// Ẩn hiện password
+const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('passwordInput');
+
+    togglePassword.addEventListener('click', function (e) {
+        // Chuyển đổi giữa 'password' và 'text'
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        // Chuyển đổi biểu tượng con mắt
+        this.querySelector('i').classList.toggle('fa-eye');
+        this.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+</script>
+
+
+</body>
+</html>
