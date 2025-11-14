@@ -37,7 +37,7 @@
                     <div class="movie-info">
                         <h3>{{ movie.title }}</h3>
                         <p>Ngày chiếu: **{{ movie.date }}**</p>
-                        <a href="/movie/{{ movie.title|lower|replace(' ', '-') }}" class="btn-buy">MUA VÉ</a>
+                        <a href="{{ url_for('movies') }}" class="btn-buy">MUA VÉ</a>
                     </div>
                 </div>
                 {% endfor %}

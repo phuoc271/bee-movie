@@ -256,6 +256,13 @@ def reset_token(token):
 
     return render_template('reset_token.html', title='Đặt lại Mật khẩu', token=token)
 
+@app.route("/all-movies")
+def all_movies():
+    return render_template("all-movies.html")
+
+@app.route("/movies")
+def movies():
+    return render_template("movies.html")
 
 if __name__ == '__main__':
     app.run(debug=True)
