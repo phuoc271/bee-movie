@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Bee Movie Cinema{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+
+<body>
+    
+    <header class="two-tier-header">
+        
+        <div class="logo-area">
+            <a href="/">
+                <img src="{{ url_for('static', filename='image/logo.png') }}" 
+                     alt="Bee Movie Cinema Logo"
+                     class="header-logo">
+            </a>
+        </div>
+
+        <div class="menu-area">
+            
+            <div class="header-top">
+                <nav class="main-nav1">
+                    <ul>
+                        <li><a href="/gioi-thieu">GIỚI THIỆU</a></li>
+                        <li><a href="/dich-vu">DỊCH VỤ</a></li>
+                        <li><a href="/tuyen-dung">TUYỂN DỤNG</a></li>
+                        <li><a href="/lien-he">LIÊN HỆ</a></li>
+                        <li><a href="/faqs">FAQS</a></li>
+                        <li><a href="/mega-plus">MEGA +</a></li>
+                    </ul>
+                </nav>
+                
+<div class="user-actions">
+    {% if session.fullname %}
+        <div class="dropdown">
+    <button class="btn btn-dark dropdown-toggle d-flex align-items-center" 
+            type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <span style="padding: 5px;">{{ session.fullname }}</span>
+        <i class="fa fa-user" aria-hidden="true"></i>
+    </button>
+
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="#">Hồ sơ</a></li>
+        <li><a class="dropdown-item" href="/logout">Đăng xuất</a></li>
+    </ul>
+</div>
+    {% else %}
+        <a href="/register" class="btn-primary">Đăng Ký</a>
+        <a href="/login" class="btn-secondary">Đăng Nhập</a>
+    {% endif %}
+</div>
+
+
+            </div>
+
+            <div class="header-bottom">
+                <nav class="main-nav">
+                    <ul>
+                        <li><a href="/" class="active-nav">LỊCH CHIẾU</a></li>
+                        <li><a href="/phim">PHIM</a></li>
+                        <li><a href="/rap-gia-ve">RẠP & GIÁ VÉ</a></li>
+                        <li><a href="/uu-dai">ƯU ĐÃI</a></li>
+                    </ul>
+                </nav>
+            </div>
+
+        </div> </header>
+
+    <div class="container">
+        {% block content %}{% endblock %} 
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

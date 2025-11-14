@@ -1,0 +1,12 @@
+{
+    "khiemtks31@gmail.com": {
+        "fullname": "Đoàn Gia Khiêm",
+        "username": "Kayden",
+        "password": "scrypt:32768:8:1$70M9FJRWcYKzWJHW$2d982f1c19383d3e346c6ca2a44a03200f59e61d29314b63ed0e35794aed3cc1f96dc77d1f785f8cf45c33f41262ce6d0439b43f2084ac511eb324ddcc18c6e4"
+    },
+    "123@gmail.com": {
+        "fullname": "Đoàn Gia Khiêm",
+        "username": "Kayden",
+        "password": "scrypt:32768:8:1$aaq8H7BIcF6jSKmz$56c053cdfc755afd15b247e8e9ece742740ec59d9ce7bf5b72e5f544cdf5cbe39caf42c229276034f93221297bbfcd3f9a1cb553354fbb020eb955bd35a5ab8f"
+    }
+}

@@ -1,0 +1,74 @@
+/* =============================
+   🎬 STYLE.CSS — MGG CINEMA DEMO
+   ============================= */
+
+:root {
+  --bg: #0f1724;
+  --card: #0b1220;
+  --muted: #9aa4b2;
+  --accent: #ff6b6b;
+  --glass: rgba(255, 255, 255, 0.04);
+  --container: 1100px;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: linear-gradient(180deg, #071021 0%, #0f1724 100%); color: #e6eef6; }
+.wrap { max-width: var(--container); margin: 28px auto; padding: 18px; }
+
+/* HEADER */
+header { display:flex; align-items:center; gap:18px; }
+.logo { display:flex; align-items:center; gap:10px; }
+.logo .mark { width:48px; height:48px; border-radius:8px; background:linear-gradient(135deg,#ff8a8a,#ff6b6b); display:flex; align-items:center; justify-content:center; font-weight:800; color:#111; }
+h1 { font-size:20px; margin:0; }
+p.lead { margin:2px 0 0; color:var(--muted); font-size:13px; }
+
+/* CONTROLS */
+.controls { display:flex; gap:12px; flex-wrap:wrap; margin:18px 0 22px; align-items:center; }
+.search { flex:1; min-width:200px; }
+.search input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit; }
+.select, .chips { display:flex; gap:8px; align-items:center; }
+.select select { padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:inherit; }
+
+.chip { padding:8px 12px; border-radius:999px; background:rgba(255,255,255,0.03); cursor:pointer; border:1px solid transparent; transition:0.2s; }
+.chip:hover { background:rgba(255,255,255,0.08); }
+.chip.active { background:linear-gradient(90deg,#15202b 0%, #11303f 100%); border-color:rgba(255,255,255,0.04); }
+
+/* GRID */
+.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:16px; }
+.card { background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.03); box-shadow:0 6px 18px rgba(2,6,23,0.6); transition:transform .18s ease; }
+.card:hover { transform:translateY(-6px); }
+.poster { aspect-ratio:2/3; width:100%; display:block; object-fit:cover; }
+.meta { padding:12px; }
+.title { font-weight:700; margin:0 0 6px; font-size:15px; }
+.sub { font-size:13px; color:var(--muted); margin:0 0 10px; }
+.rating { margin-left:auto; font-weight:700; color:var(--accent); }
+
+/* PAGINATION */
+.pagination { display:flex; gap:8px; justify-content:center; margin-top:20px; }
+.page { padding:8px 12px; border-radius:8px; background:transparent; border:1px solid rgba(255,255,255,0.03); cursor:pointer; transition:0.2s; }
+.page:hover { background:rgba(255,255,255,0.08); }
+.page.active { background:var(--accent); color:#111; border-color:transparent; }
+
+/* MODAL */
+.modal-backdrop { position:fixed; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.8)); display:none; align-items:center; justify-content:center; padding:20px; }
+.modal { background:linear-gradient(180deg,#071427,#081827); width:900px; max-width:100%; border-radius:12px; overflow:hidden; display:flex; gap:16px; position:relative; }
+.modal .left { width:320px; }
+.modal .left img { width:100%; height:100%; object-fit:cover; }
+.modal .right { padding:18px; flex:1; }
+.close { position:absolute; right:22px; top:18px; background:transparent; border:none; color:var(--muted); font-size:22px; cursor:pointer; }
+
+/* RESPONSIVE */
+@media (max-width:760px) {
+  header { gap:8px; }
+  .controls { flex-direction:column; align-items:stretch; }
+  .modal { flex-direction:column; }
+  .modal .left { width:100%; height:300px; }
+}
+
+/* UTILITIES */
+.muted { color:var(--muted); }
+.flex { display:flex; align-items:center; }
+.spacer { flex:1; }
+.btn { padding:8px 12px; border-radius:10px; border:0; background:var(--accent); color:#111; font-weight:700; cursor:pointer; transition:0.2s; }
+.btn:hover { opacity:0.9; }

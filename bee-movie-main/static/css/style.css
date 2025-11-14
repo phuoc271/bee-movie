@@ -1,0 +1,428 @@
+/* Màu chủ đạo: Nền đen (#1a1a1a), Chữ trắng (#ffffff), Điểm nhấn vàng (#ffe600) */
+:root {
+    --bg-color: #1a1a1a;
+    --text-color: #ffffff;
+    --accent-color: gold ; /* Màu vàng rực (Yellow) */
+    --accent-color2: var(--light-gray-text);
+    --secondary-bg: #333333;
+    --dark-bg: #000000;      /* Nền đen tuyền */
+    --light-gray-text: #cccccc;
+}
+
+/* Thiết lập chung (GIỮ NGUYÊN) */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color) !important;
+    color: var(--text-color) !important;
+}
+
+.container {
+    width: 100%;
+    margin: 0 auto;
+}
+
+a {
+    color: var(--text-color);
+    text-decoration: none !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* HEADER HAI TẦNG                                       */
+/* -------------------------------------------------------------------------- */
+
+.two-tier-header {
+    width: 100%;
+    /* Sử dụng Grid để chia Logo và Menu/Hành động */
+    display: grid;
+    /* Cột 1: Logo (chiếm 150px); Cột 2: Menu/Hành động (phần còn lại) */
+    grid-template-columns: 150px 1fr; 
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background-color: var(--dark-bg);
+    border-bottom: 3px solid var(--accent-color); /* Đường viền vàng dưới cùng */
+}
+
+/* Phần LOGO (Cột 1) */
+.logo-area {
+    /* Đảm bảo logo kéo dài hết chiều cao của cả hai tầng */
+    grid-row: 1 / span 2; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: black;
+    padding: 5px 0;
+    overflow: hidden; 
+}
+
+.header-logo {
+    height: 100px; /* Kích thước logo */
+    width: auto;
+    display: block;
+    object-fit: contain;
+}
+
+/* Phần MENU & HÀNH ĐỘNG (Cột 2) */
+.menu-area {
+    display: grid;
+    grid-template-rows: auto auto; /* Chia thành 2 hàng Menu Phụ và Menu Chính */
+    width: 100%;
+}
+
+/* --- TẦNG 1: Menu Phụ & Nút hành động --- */
+.header-top {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    background-color: var(--dark-bg);
+    padding: 5px 30px;
+}
+
+/* Menu Phụ (.main-nav1) */
+.main-nav1 ul {
+    list-style: none;
+    display: flex;
+    margin-right: 20px;
+}
+
+.main-nav1 ul li a {
+    color: var(--light-gray-text); /* Chữ xám nhạt */
+    padding: 0 10px;
+    font-size: 13px;
+    font-weight: normal;
+    text-transform: uppercase;
+    transition: color 0.2s;
+    margin-left: 15px;
+}
+
+.main-nav1 ul li a:hover {
+    color: var(--accent-color);
+}
+
+/* Nút Đăng ký/Đăng nhập (SỬA LẠI ĐỂ ĐÚNG VỊ TRÍ VÀ MÀU SẮC) */
+.user-actions {
+    display: flex;
+    align-items: center;
+}
+
+.user-actions ul li a:hover {
+    color: gold !important;
+    background-color: black;
+}
+
+.user-actions a {
+    color: var(--light-gray-text); /* Chữ xám nhạt */
+    background-color: black;
+    padding: 8px 15px;
+    margin-left: 10px;
+    font-size: 13px;
+    border-radius: 2px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.dropdown-menu.show {
+    display: block;
+    background-color: black;
+}
+
+.dropdown-toggle::after {
+    display: none !important; /* Ẩn mũi tên tạo ra bởi Bootstrap */
+}
+
+.dropdown-toggle {
+    color: gold !important;
+    background-color: black !important;
+    border: none !important;
+}
+
+.dropdown-toggle:hover {
+    color: var(--light-gray-text) !important;
+}
+
+.btn-primary { /* Đăng Ký */
+    background-color: transparent;
+    border: 1px solid var(--text-color);
+    color: var(--text-color);
+}
+
+.btn-secondary { /* Đăng Nhập */
+    background-color: var(--accent-color) !important;
+    color: black !important; /* Chữ đen trên nền vàng */
+    border: none !important;
+}
+
+
+/* --- TẦNG 2: Menu Chính --- */
+.header-bottom {
+    display: flex;
+    align-items: center;
+    background-color: var(--dark-bg); /* Giữ nguyên nền đen */
+    padding: 10px 30px;
+}
+
+/* Menu Chính (.main-nav) */
+.main-nav {
+    width: 100%;
+    /* Đẩy menu về phía bên phải hơn để cân đối */
+    display: flex; /* Bổ sung display:flex cho main-nav */
+    justify-content: start; 
+}
+
+.main-nav ul {
+    list-style: none;
+    display: flex;
+}
+
+.main-nav ul li a {
+    padding: 10px 20px;
+    font-size: 18px; 
+    font-weight: 900; 
+    color: gold; 
+    text-transform: uppercase;
+    transition: color 0.2s;
+}
+
+/* Nút "LỊCH CHIẾU" màu vàng */
+.main-nav ul li a.active-nav {
+    color: gold; /* Chữ đen */
+    padding: 10px 25px; 
+    margin-right: 15px; 
+}
+
+.main-nav ul li a:hover {
+    color: var(--accent-color2);
+}
+
+.hero-banner {
+    position: relative;
+    height: 600px; 
+    background: url('https://via.placeholder.com/1500x600/333333/FFFFFF?text=BANNER+PHIM') center center / cover no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    text-align: center;
+    padding-bottom: 50px;
+}
+
+.hero-banner {
+    position: relative;
+    height: 600px; /* Chiều cao banner */
+    background: url('https://via.placeholder.com/1500x600/333333/FFFFFF?text=NHÀ+MA+XÓ+Banner+Placeholder') center center / cover no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Đặt nội dung ở phía dưới */
+    align-items: center;
+    text-align: center;
+    padding-bottom: 50px;
+    
+    /* Overlay đen mờ để chữ nổi bật */
+    &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5); 
+    }
+}
+
+.hero-banner * {
+    z-index: 10; /* Đảm bảo nội dung nằm trên lớp overlay */
+}
+
+.hero-banner h1 {
+    font-size: 50px;
+    color: var(--accent-color); /* Tên phim chính màu vàng */
+    margin-bottom: 10px;
+}
+
+.hero-banner p {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: #dddddd;
+}
+
+.btn-detail {
+    background-color: var(--accent-color);
+    color: #000000;
+    padding: 10px 30px;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+/* Lựa chọn Mua Vé Online dưới banner */
+.buy-ticket-online {
+    background-color: #333333;
+    padding: 20px 5%;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
+}
+
+/* Các button/dropdown chọn rạp, phim, ngày */
+.buy-ticket-online select {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    background-color: #555555;
+    color: var(--text-color);
+    appearance: none; /* Bỏ giao diện mặc định của trình duyệt */
+}
+
+/* -------------------------------------------------------------------------- */
+/* PHIM ĐANG CHIẾU                               */
+/* -------------------------------------------------------------------------- */
+
+.movie-list {
+    padding: 40px 5%;
+    text-align: center;
+}
+
+.movie-list h2 {
+    font-size: 24px;
+    margin-bottom: 30px;
+    color: var(--accent-color);
+    position: relative;
+    display: inline-block;
+    padding: 5px 15px;
+    border: 2px solid var(--accent-color);
+}
+
+.movies-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap; /* Cho phép xuống dòng nếu màn hình nhỏ */
+}
+
+.movie-card {
+    width: 250px;
+    background-color: #222222;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.movie-card img {
+    width: 100%;
+    height: 350px;
+    display: block;
+    object-fit: cover;
+}
+
+.movie-info {
+    padding: 15px;
+    text-align: left;
+}
+
+.movie-info h3 {
+    font-size: 16px;
+    margin-bottom: 5px;
+    height: 40px; /* Cố định chiều cao cho tên phim */
+    overflow: hidden;
+}
+
+.movie-info p {
+    font-size: 12px;
+    color: #aaaaaa;
+    margin-bottom: 10px;
+}
+
+.btn-buy {
+    background-color: #3f3f3f;
+    color: var(--text-color);
+    padding: 8px 15px;
+    display: block;
+    text-align: center;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.btn-buy:hover {
+    background-color: var(--accent-color);
+    color: #000000;
+}
+
+.view-all {
+    display: block;
+    margin-top: 30px;
+    color: var(--accent-color);
+    font-weight: bold;
+    text-decoration: underline;
+}
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 5%;
+    background-color: #000;
+    border-bottom: 3px solid var(--accent-color);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+/* Khung chứa logo */
+.logo_header {
+    display: flex;
+    align-items: center;
+}
+
+/* Logo hiển thị gọn, không bị méo */
+.header-logo {
+    height: 100px;       /* Bạn có thể chỉnh 40–65px tùy ý */
+    width: auto;        /* Giữ đúng tỷ lệ */
+    object-fit: contain;
+    display: block;
+}
+
+/* style login */
+.bg-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    z-index: 1;
+}
+
+.login-card {
+    position: relative;
+    z-index: 2;
+}
+
+.google-login-container {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+}
+.header-space {
+    height: 200px;
+}
+.logo-overlay {
+    background-image: url("/static/image/logo.png");
+    background-size: cover;
+    background-position: center;
+}
+.welcome-text {
+    color: #fff;
+    font-weight: 600;
+    margin-right: 10px;
+}
+
+/* Mat an hien */
+.position-absolute {
+    cursor: pointer; 
+    z-index: 10; 
+    color: black;
+}

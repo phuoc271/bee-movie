@@ -1,0 +1,51 @@
+{% extends "header.html" %}
+
+{% block title %}Trang Chủ - Lịch Chiếu Phim{% endblock %}
+
+{% block content %}
+    <main>
+        <section class="hero-banner">
+            <h1>NHÀ MA XÓ</h1>
+            <p>SUẤT CHIẾU SỚM TỪ **18H NGÀY 22.10.2025**</p>
+            <a href="/nha-ma-xo" class="btn-detail">Chi Tiết</a>
+        </section>
+
+        <section class="buy-ticket-online">
+            <p style="color: white; margin-right: 10px;">Chọn suất chiếu để đặt vé trực tuyến:</p>
+            
+            <select name="cinema" id="cinema-select">
+                <option value="GL">MEGA GS CAO THẮNG</option>
+                <option value="SG">MEGA GS SÀI GÒN</option>
+            </select>
+
+            <select name="movie" id="movie-select">
+                <option value="">Chọn phim</option>
+            </select>
+
+            <select name="date" id="date-select">
+                <option value="">Chọn ngày</option>
+            </select>
+        </section>
+
+        <section class="movie-list">
+            <h2 class="active-movie-tab">PHIM ĐANG CHIẾU</h2>
+            
+            <div class="movies-container">
+                {% for movie in movies %}
+                <div class="movie-card">
+                    <img src="https://via.placeholder.com/250x350/B71C1C/FFFFFF?text={{ movie.title|urlencode }}" alt="{{ movie.title }}">
+                    <div class="movie-info">
+                        <h3>{{ movie.title }}</h3>
+                        <p>Ngày chiếu: **{{ movie.date }}**</p>
+                        <a href="{{ url_for('movies') }}" class="btn-buy">MUA VÉ</a>
+                        <!--<a href="/movie/{{ movie.title|lower|replace(' ', '-') }}" class="btn-buy">MUA VÉ</a>-->
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <a href="{{ url_for('all_movies') }}" class="view-all">Xem tất cả</a>
+
+        </section>
+    </main>
+{% endblock %}
