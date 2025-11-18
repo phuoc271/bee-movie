@@ -2,3 +2,4 @@ Flask
 Flask-Mail
 google-auth-oauthlib
 google-auth
+requests
