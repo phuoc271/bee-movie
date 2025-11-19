@@ -1,5 +1,6 @@
 Flask
 Flask-Mail
+flask-caching
 google-auth-oauthlib
 google-auth
 requests
