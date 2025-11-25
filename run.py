@@ -1,63 +1,77 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_caching import Cache
-import json
-import os
-import google.auth.transport.requests
-import google.oauth2.id_token
-import requests
+from flask_sqlalchemy import SQLAlchemy # <--- NHẬP KHẨU MỚI
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash, check_password_hash
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
+import google.auth.transport.requests
+import google.oauth2.id_token
+import requests
+import json
+import os
 
-# -------------------- Cấu hình Flask & Cache --------------------
 app = Flask(__name__)
-USER_FILE = "fake_users.json"
 
-# Bí mật ứng dụng (đổi khi deploy thật)
+
 app.secret_key = "mysecretkey123456"
 app.config['SECRET_KEY'] = app.secret_key
 app.config['SECURITY_PASSWORD_SALT'] = 'some-random-salt-value'
 
-# Flask-Caching (simple). Khi deploy production, chuyển sang Redis/Memcached.
+
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
-# -------------------- Cấu hình Mail --------------------
+# Cấu hình DATABASE (MySQL)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Phuoc2714002.@localhost:3306/bee_movie_db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Khởi tạo đối tượng SQLAlchemy
+db = SQLAlchemy(app)
+
+# USER MODEL 
+class User(db.Model):
+    """Mô hình người dùng ánh xạ tới bảng 'users' trong MySQL."""
+    __tablename__ = 'users'
+    
+    # Khóa chính và tự động tăng
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False) 
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    fullname = db.Column(db.String(120), nullable=True)
+    password_hash = db.Column(db.String(256), nullable=True) 
+
+    def set_password(self, password):
+        """Hash mật khẩu và lưu vào cột password_hash."""
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        """Kiểm tra mật khẩu nhập vào có khớp với mật khẩu hash không."""
+        return check_password_hash(self.password_hash, password)
+
+    def __repr__(self):
+        return f'<User {self.email}>'
+
+# Cấu hình Mail 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'nguyenhoaiphuoc271@gmail.com'
-app.config['MAIL_PASSWORD'] = 'khrh snlo wgth pdeu'  # mật khẩu app (example)
+app.config['MAIL_PASSWORD'] = 'khrh snlo wgth pdeu'
 mail = Mail(app)
 
-# -------------------- TMDB config & HTTP session --------------------
+# TMDB config & HTTP session 
 TMDB_API_KEY = "f39ba5c15f6a58e7a1bfec8acefe938e"
 TMDB_BASE_URL = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 TMDB_BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/original"
-
-# Tạo session tái sử dụng (giảm overhead TCP)
 http = requests.Session()
-
-# Thời gian chờ cho request (giúp tránh treo lâu)
 REQUEST_TIMEOUT = 6
 
-# -------------------- Utils: read/write users --------------------
-def load_users():
-    if not os.path.exists(USER_FILE):
-        return {}
-    try:
-        with open(USER_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except json.JSONDecodeError:
-        print(f"Lỗi: File {USER_FILE} không phải JSON hợp lệ hoặc trống.")
-        return {}
+# Token reset password 
+def get_user_by_email(email):
+    """Tìm người dùng bằng email trong DB."""
+    return User.query.filter_by(email=email).first()
 
-def save_users(data):
-    with open(USER_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-# -------------------- Token reset password --------------------
 def get_reset_token(user_email, expires_sec=1800):
     s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     return s.dumps(user_email, salt=app.config['SECURITY_PASSWORD_SALT'])
@@ -71,13 +85,13 @@ def verify_reset_token(token, max_age=1800):
         return None
     return email
 
-# Sử dụng memoize để cache theo args của hàm (endpoint + params)
+# Sử dụng memoize để cache theo args của hàm (endpoint + params) 
 @cache.memoize(timeout=600)
 def fetch_from_tmdb(endpoint, params=None):
     """Hàm chung gọi TMDB, cache theo endpoint + params (memoize)."""
     if params is None:
         params = {}
-    params = dict(params)  # copy để an toàn
+    params = dict(params) 
     params['api_key'] = TMDB_API_KEY
     url = f"{TMDB_BASE_URL}/{endpoint.lstrip('/')}"
     try:
@@ -88,7 +102,7 @@ def fetch_from_tmdb(endpoint, params=None):
         print(f"[TMDB ERROR] endpoint={endpoint} params={params} -> {e}")
         return None
 
-# Memoize: cache theo movie_id
+# Memoize: cache theo movie_id 
 @cache.memoize(timeout=7200)
 def fetch_movie_videos(movie_id):
     return fetch_from_tmdb(f"movie/{movie_id}/videos")
@@ -101,7 +115,7 @@ def get_trailer_key(videos_data):
             return v.get('key')
     return videos_data['results'][0].get('key') if videos_data['results'] else None
 
-# Cache danh sách thể loại (một lần, hoặc 2 giờ)
+# Cache danh sách thể loại (một lần, hoặc 2 giờ) 
 GENRE_MAP = {}
 @cache.cached(timeout=7200, key_prefix="tmdb_genres")
 def fetch_genres():
@@ -120,21 +134,20 @@ def get_genre_names(genre_ids, genre_map):
     names = [genre_map.get(gid, 'N/A') for gid in genre_ids]
     return " / ".join(names)
 
-# Thêm một hàm chuyên cho gọi list phim (memoize dựa trên endpoint+params)
+# Thêm một hàm chuyên cho gọi list phim (memoize dựa trên endpoint+params) 
 @cache.memoize(timeout=600)
 def fetch_movies_list(endpoint, params=None):
-    # endpoint ví dụ: "movie/now_playing" hoặc "movie/upcoming"
     data = fetch_from_tmdb(endpoint, params=params)
     if not data:
         return []
     return data.get('results', [])
 
-# -------------------- Context processor --------------------
+# Context processor 
 @app.context_processor
 def inject_user():
     return dict(session=session)
 
-# -------------------- Routes chính --------------------
+# Routes chính 
 @app.route('/')
 def home():
     """Trang chủ: lấy now_playing + upcoming. Gọi song song để tăng tốc."""
@@ -187,7 +200,7 @@ def home():
                            featured_movies=featured_movies_list,
                            upcoming=upcoming_list)
 
-# Route all now playing - cache riêng cho route này
+# Route all now playing - cache riêng cho route này 
 @app.route("/now-playing")
 @cache.cached(timeout=600, key_prefix="cache_now_playing_page")
 def now_playing():
@@ -206,7 +219,7 @@ def now_playing():
         })
     return render_template("all-movies.html", movies_data_from_server=movie_list, title="Phim Đang Chiếu")
 
-# Route all upcoming - cache riêng
+# Route all upcoming - cache riêng 
 @app.route("/upcoming")
 @cache.cached(timeout=600, key_prefix="cache_upcoming_page")
 def upcoming():
@@ -225,20 +238,20 @@ def upcoming():
         })
     return render_template("all-movies.html", movies_data_from_server=movie_list, title="Phim Sắp Chiếu")
 
-# -------------------- Auth routes  --------------------
+# Auth routes 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
 
-        users = load_users()
-        user_data = users.get(email)
+        user = get_user_by_email(email) 
 
-        if user_data and 'password' in user_data and check_password_hash(user_data['password'], password):
-            session["user_email"] = email
-            session["username"] = user_data.get("username")
-            session["fullname"] = user_data.get("fullname")
+        # Kiểm tra người dùng tồn tại và mật khẩu hash
+        if user and user.password_hash and user.check_password(password):
+            session["user_email"] = user.email
+            session["username"] = user.username
+            session["fullname"] = user.fullname
             flash("Đăng nhập thành công!", "success")
             return redirect("/")
         else:
@@ -254,24 +267,40 @@ def register():
         password = request.form["password"]
         confirm_password = request.form["confirm_password"]
 
-        users = load_users()
-
+        # 1. Kiểm tra mật khẩu
         if password != confirm_password:
             flash("Mật khẩu không khớp!", "danger")
             return redirect(url_for("register"))
-        if email in users:
+
+        # 2. Kiểm tra email đã tồn tại trong DB chưa
+        if get_user_by_email(email):
             flash("Email đã tồn tại!", "warning")
             return redirect(url_for("register"))
+            
+        # 3. Kiểm tra username đã tồn tại chưa (optional, nhưng tốt cho DB)
+        if User.query.filter_by(username=username).first():
+            flash("Tên người dùng đã tồn tại!", "warning")
+            return redirect(url_for("register"))
 
-        hashed_password = generate_password_hash(password)
-        users[email] = {
-            "fullname": fullname,
-            "username": username,
-            "password": hashed_password
-        }
-        save_users(users)
-        flash("Tạo tài khoản thành công!", "success")
-        return redirect(url_for("login"))
+        # 4. Tạo đối tượng User mới và lưu vào DB
+        new_user = User(
+            fullname=fullname,
+            email=email,
+            username=username,
+        )
+        new_user.set_password(password) 
+        
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            flash("Tạo tài khoản thành công!", "success")
+            return redirect(url_for("login"))
+        except Exception as e:
+            db.session.rollback()
+            print(f"LỖI DB KHI ĐĂNG KÝ: {e}")
+            flash("Có lỗi xảy ra, không thể tạo tài khoản.", "danger")
+            return redirect(url_for("register"))
+            
     return render_template("register.html")
 
 @app.route("/google-login", methods=["POST"])
@@ -286,16 +315,30 @@ def google_login():
         )
         email = user_info.get("email")
         name = user_info.get("name")
-        users = load_users()
-        if email not in users:
-            users[email] = {"fullname": name, "username": email.split("@")[0], "password": ""}
-            save_users(users)
-        session["email"] = email
-        session["username"] = users[email]["username"]
-        session["fullname"] = users[email]["fullname"]
+        
+        user = get_user_by_email(email) 
+
+        if not user:
+            # Tạo người dùng mới qua Google Login
+            new_user = User(
+                fullname=name,
+                email=email,
+                username=email.split("@")[0],
+                password_hash=None 
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            user = new_user
+
+        session["user_email"] = email
+        session["username"] = user.username
+        session["fullname"] = user.fullname
         return {"status": "ok"}
     except Exception as e:
         print("GOOGLE LOGIN ERROR:", e)
+        # Nếu có lỗi DB, rollback
+        if 'db' in globals() and db.session:
+            db.session.rollback()
         return {"status": "error", "message": str(e)}, 400
 
 @app.route("/logout")
@@ -304,13 +347,15 @@ def logout():
     flash("Đã đăng xuất!", "info")
     return redirect(url_for('login'))
 
-# -------------------- Reset password --------------------
+# Reset password 
 @app.route("/reset_password", methods=["GET", "POST"])
 def reset_request():
     if request.method == "POST":
         email = request.form.get('email')
-        users = load_users()
-        if email in users:
+        
+        user = get_user_by_email(email) 
+
+        if user:
             token = get_reset_token(email)
             reset_link = url_for('reset_token', token=token, _external=True)
             msg = Message('Yêu cầu Đặt lại Mật khẩu',
@@ -338,23 +383,36 @@ def reset_token(token):
     if email is None:
         flash('Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.', 'warning')
         return redirect(url_for('reset_request'))
-    users = load_users()
-    if email not in users:
+    
+    user = get_user_by_email(email) 
+
+    if user is None:
         flash('Tài khoản không tồn tại.', 'danger')
         return redirect(url_for('reset_request'))
+        
     if request.method == "POST":
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
+        
         if new_password != confirm_password:
             flash("Mật khẩu không khớp!", "danger")
             return render_template('reset_token.html', title='Đặt lại Mật khẩu', token=token)
-        users[email]['password'] = generate_password_hash(new_password)
-        save_users(users)
-        flash('Mật khẩu của bạn đã được cập nhật!', 'success')
-        return redirect(url_for('login'))
+            
+        # Cập nhật mật khẩu trong DB
+        user.set_password(new_password)
+        
+        try:
+            db.session.commit()
+            flash('Mật khẩu của bạn đã được cập nhật!', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            print(f"LỖI DB KHI CẬP NHẬT MẬT KHẨU: {e}")
+            flash('Có lỗi xảy ra, không thể cập nhật mật khẩu.', 'danger')
+            
     return render_template('reset_token.html', title='Đặt lại Mật khẩu', token=token)
 
-# -------------------- Movie detail --------------------
+# Movie detail 
 @app.route("/movie/<int:movie_id>")
 def movie_detail(movie_id):
     movie_data = fetch_from_tmdb(f"movie/{movie_id}", params={'language': 'vi-VN', 'append_to_response': 'credits'})
@@ -392,7 +450,7 @@ def movie_detail(movie_id):
     flash("Không tìm thấy thông tin phim.", "danger")
     return redirect(url_for('home'))
 
-# -------------------- Static routes --------------------
+# Static routes 
 @app.route("/all-movies")
 def all_movies():
     return render_template("all-movies.html")
@@ -401,8 +459,17 @@ def all_movies():
 def movies():
     return render_template("movies.html")
 
-# -------------------- Khởi chạy app --------------------
+# Khởi chạy app 
 if __name__ == '__main__':
+    # THAO TÁC DB: Tạo bảng nếu chưa tồn tại. Phải đặt trong app context.
+    with app.app_context():
+        try:
+            print("Đang tạo bảng DB nếu chưa tồn tại...")
+            db.create_all()
+            print("Đã hoàn tất kiểm tra và tạo bảng DB.")
+        except Exception as e:
+            print(f"LỖI KHI TẠO BẢNG DB: Vui lòng kiểm tra Laragon/MySQL và cấu hình kết nối. Lỗi: {e}")
+            
     # Tải genres khi start app (giúp request đầu nhanh hơn)
     try:
         print("Đang tải danh sách thể loại (genres)...")
@@ -410,4 +477,5 @@ if __name__ == '__main__':
         print("Đã tải xong thể loại.")
     except Exception as e:
         print("Lỗi tải genre khi start:", e)
+        
     app.run(debug=True)

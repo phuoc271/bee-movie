@@ -333,6 +333,7 @@ a {
 
 .user-actions a:hover {
     color: gold !important;
+    --bs-dropdown-link-active-bg: black !important;
 }
 .user-actions1 a:hover {
     color: white !important;
