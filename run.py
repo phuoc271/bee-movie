@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_caching import Cache
-from flask_sqlalchemy import SQLAlchemy # <--- NHẬP KHẨU MỚI
+from flask_sqlalchemy import SQLAlchemy 
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeTimedSerializer
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -8,7 +8,6 @@ from concurrent.futures import ThreadPoolExecutor
 import google.auth.transport.requests
 import google.oauth2.id_token
 import requests
-import json
 import os
 
 app = Flask(__name__)
@@ -65,7 +64,7 @@ TMDB_BASE_URL = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 TMDB_BACKDROP_BASE_URL = "https://image.tmdb.org/t/p/original"
 http = requests.Session()
-REQUEST_TIMEOUT = 6
+REQUEST_TIMEOUT = 15
 
 # Token reset password 
 def get_user_by_email(email):
