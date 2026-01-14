@@ -62,27 +62,6 @@
                 </button>
             </div>
         </section>
-        
-        <section class="buy-ticket-online">
-            <p style="color: white; margin-right: 10px;">Chọn suất chiếu để đặt vé trực tuyến:</p>
-            
-            <select name="cinema" id="cinema-select">
-                <option value="GL">MEGA GS CAO THẮNG</option>
-                <option value="SG">MEGA GS SÀI GÒN</option>
-            </select>
-
-            <select name="movie" id="movie-select">
-                <option value="">Chọn phim</option>
-                {% for movie in movies %}
-                <option value="{{ movie.id }}">{{ movie.title }}</option>
-                {% endfor %}
-            </select>
-
-            <select name="date" id="date-select">
-                <option value="">Chọn ngày</option>
-            </select>
-            <button class="btn-search">TÌM SUẤT CHIẾU</button>
-        </section>
 
         <section class="movie-list">
             <h2 class="active-movie-tab">PHIM ĐANG CHIẾU</h2>

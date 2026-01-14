@@ -1,0 +1,162 @@
+{% extends "header.html" %}
+
+{% block title %}Giới Thiệu - Bee Movie{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+    :root {
+        --primary-gold: #ffc107;
+        --card-bg: #222;
+        --text-muted: #aaaaaa;
+    }
+
+    .about-hero {
+        height: 700px;
+        padding: 60px 0;
+        text-align: center;
+        background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                url('/static/image/background-logo.jpg') center/cover;
+        background-size: cover;
+        background-position: center;
+        border-bottom: 3px solid var(--primary-gold);
+        margin-bottom: 50px;
+    }
+
+    .bee-logo-large {
+        font-size: 4rem;
+        color: var(--primary-gold);
+        margin-bottom: 15px;
+        text-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+    }
+
+    .section-title {
+        border-left: 5px solid var(--primary-gold);
+        padding-left: 15px;
+        margin-bottom: 30px;
+        font-weight: bold;
+    }
+
+    .feature-card {
+        background: var(--card-bg);
+        border: 1px solid #333;
+        border-radius: 15px;
+        padding: 30px;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+        height: 100%;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-10px);
+        border-color: var(--primary-gold);
+    }
+
+    .feature-icon {
+        font-size: 2.5rem;
+        color: var(--primary-gold);
+        margin-bottom: 20px;
+    }
+
+    .stat-box {
+        text-align: center;
+        padding: 20px;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: var(--primary-gold);
+        display: block;
+    }
+
+    .stat-label {
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.9rem;
+    }
+
+    .highlight-text {
+        color: var(--primary-gold);
+        font-weight: bold;
+    }
+</style>
+
+<main>
+    <div class="about-hero">
+        <div class="container">
+            <div class="bee-logo-large">
+                <i class="fas fa-bee"></i>
+            </div>
+            <h1 class="display-4 fw-bold">Chào mừng đến với <span class="highlight-text">Bee Movie</span></h1>
+            <p class="lead text-light">Nơi kết nối đam mê điện ảnh và mang đến trải nghiệm đặt vé tuyệt vời nhất.</p>
+        </div>
+    </div>
+
+    <div class="container mb-5">
+        <div class="row align-items-center mb-5">
+            <div class="col-md-6">
+                <h2 class="section-title">Câu Chuyện Của Chúng Tôi</h2>
+                <p>Được thành lập với biểu tượng chú Ong chăm chỉ, <span class="highlight-text">Bee Movie</span> ra đời với sứ mệnh mang "mật ngọt điện ảnh" đến cho mọi khán giả. Chúng tôi không chỉ là một nền tảng đặt vé, mà là cộng đồng dành cho những người yêu phim.</p>
+                <p>Tại Bee Movie, chúng tôi tin rằng mỗi bộ phim là một hành trình cảm xúc. Đó là lý do chúng tôi luôn nỗ lực tối ưu hóa hệ thống để bạn có thể tìm thấy suất chiếu và chỗ ngồi ưng ý nhất chỉ trong vài cú nhấp chuột.</p>
+            </div>
+            <div class="col-md-6 text-center">
+                <div class="p-4" style="background: var(--card-bg); border-radius: 20px;">
+                    <div class="row">
+                        <div class="col-6 stat-box border-bottom border-end border-secondary">
+                            <span class="stat-number">50+</span>
+                            <span class="stat-label">Rạp đối tác</span>
+                        </div>
+                        <div class="col-6 stat-box border-bottom border-secondary">
+                            <span class="stat-number">10K+</span>
+                            <span class="stat-label">Phim cập nhật</span>
+                        </div>
+                        <div class="col-6 stat-box border-end border-secondary">
+                            <span class="stat-number">100K+</span>
+                            <span class="stat-label">Thành viên</span>
+                        </div>
+                        <div class="col-6 stat-box">
+                            <span class="stat-number">4.9</span>
+                            <span class="stat-label">Đánh giá sao</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr style="border-color: #444;" class="my-5">
+
+        <h2 class="section-title text-center mx-auto" style="width: fit-content;">Tại sao chọn Bee Movie?</h2>
+        <div class="row g-4 mt-2">
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <i class="fas fa-bolt feature-icon"></i>
+                    <h4>Đặt Vé Nhanh Chóng</h4>
+                    <p class="text-muted" style="color: gray !important;">Hệ thống xử lý thời gian thực, giúp bạn giữ chỗ chỉ trong 30 giây.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <i class="fas fa-gift feature-icon"></i>
+                    <h4>Ưu Đãi Đặc Quyền</h4>
+                    <p class="text-muted" style="color: gray !important;">Tích lũy điểm thưởng "Bee Points" để đổi vé và bắp nước miễn phí.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card text-center">
+                    <i class="fas fa-comments feature-icon"></i>
+                    <h4>Cộng Đồng Sôi Nổi</h4>
+                    <p class="text-muted" style="color: gray !important;">Hệ thống bình luận và đánh giá giúp bạn chọn lọc được những siêu phẩm đáng xem nhất.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5 p-5 text-center" style="background: linear-gradient(45deg, #333, #222); border-radius: 20px; border: 1px solid var(--primary-gold);">
+            <h3 class="mb-3">Sẵn sàng trải nghiệm điện ảnh đỉnh cao?</h3>
+            <p class="mb-4 text-muted"  style="color: gray !important;">Đăng ký thành viên ngay hôm nay để nhận ưu đãi 50% cho vé đầu tiên.</p>
+            <a href="{{ url_for('now_playing') }}" class="btn btn-warning btn-lg px-5 fw-bold">Xem Phim Ngay</a>
+        </div>
+    </div>
+</main>
+{% endblock %}

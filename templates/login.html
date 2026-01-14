@@ -2,13 +2,10 @@
 <html>
 <head>
     <title>Đăng nhập</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
           rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
-    <!-- Google -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
@@ -25,7 +22,6 @@
 
         <h3 class="text-center mb-4 text-warning">Đăng nhập</h3>
 
-        <!-- Hiện alert Flask -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -97,10 +93,10 @@ function handleCredentialResponse(response) {
     })
     .then(res => res.json())
     .then(data => {
-        console.log("SERVER RESPONSE:", data); // log trong đây
+        console.log("SERVER RESPONSE:", data); 
         if (data.status === "ok") {
             alert("Đăng nhập Google thành công!");
-            window.location.href = "/"; // chuyển trang
+            window.location.href = "/"; 
         } else {
             alert("Lỗi đăng nhập Google: " + (data.message || ""));
         }
@@ -111,16 +107,13 @@ function handleCredentialResponse(response) {
     });
 }
 
-// Ẩn hiện password
 const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('passwordInput');
 
     togglePassword.addEventListener('click', function (e) {
-        // Chuyển đổi giữa 'password' và 'text'
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordInput.setAttribute('type', type);
         
-        // Chuyển đổi biểu tượng con mắt
         this.querySelector('i').classList.toggle('fa-eye');
         this.querySelector('i').classList.toggle('fa-eye-slash');
     });

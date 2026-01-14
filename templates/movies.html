@@ -3,6 +3,8 @@
 {% block title %}Chi Tiết Phim - {{ movie.title }}{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
 <main>
     <div class="container">
         
@@ -30,11 +32,31 @@
                 </div>
             
             <div class="details">
-                <p>
-                    <strong>Điểm đánh giá:</strong> 
-                    {{ movie.vote_average | default(0) | round(1) }} / 10 
-                    ({{ movie.vote_count | default(0) }} lượt)
-                </p>
+                <div class="rating-section mt-4 mb-4">
+                    <p>
+                        <strong>Điểm đánh giá:</strong> 
+                        <span class="text-muted fw-bold" style="color: #aaaaaa !important;">{{ movie.vote_average }}</span> / 10 
+                        <span class="text-muted"  style="color: #aaaaaa !important;"> ({{ movie.vote_count }} lượt đánh giá tổng hợp)</span>
+                    </p>
+
+                    {% if current_user %}
+                        <form action="{{ url_for('rate_movie', movie_id=movie_id) }}" method="POST" id="rating-form-final">
+                            <div class="star-wrapper">
+                                {% for i in range(10, 0, -1) %}
+                                    <input type="radio" id="rt{{ i }}" name="score" value="{{ i }}" 
+                                        {% if user_rating == i %}checked{% endif %}
+                                        onclick="this.form.submit()" />
+                                    <label for="rt{{ i }}" class="fas fa-star" title="{{ i }} sao"></label>
+                                {% endfor %}
+                            </div>
+                            <p class="small text-muted mt-1"  style="color: #aaaaaa !important;">
+                                {% if user_rating %} Bạn đã đánh giá: {{ user_rating }} sao {% else %} Chạm vào sao để đánh giá {% endif %}
+                            </p>
+                        </form>
+                    {% else %}
+                        <p class="text-muted small" style="color: #aaaaaa !important;">Vui lòng&nbsp;<a href="{{ url_for('login') }}" class="text-warning">đăng nhập</a>&nbsp;để chấm điểm phim này.</p>
+                    {% endif %}
+                </div>
                 <p><strong>Thời lượng :</strong> {{ movie.runtime }} phút</p>
                 <p><strong>Thể loại :</strong> 
                     {% if movie.genres %}
@@ -70,20 +92,172 @@
             </div>
         </div>
 
-        <div class="section">
-            <h2>Lịch chiếu hôm nay tại MEGA GS</h2>
-            <div class="showtimes-list" id="showtimesList">
-                {% if showtimes %}
-                    {% for showtime in showtimes %}
-                        <a href="{{ url_for('booking', showtime_id=showtime.id) }}" class="showtime">
-                            {{ showtime.time }}
-                        </a>
-                    {% endfor %}
-                {% else %}
-                    <p style="color: #ccc;">Hiện chưa có suất chiếu được mở bán.</p>
+<div class="section showtime-container">
+    <h2 class="mb-4">
+        <i class="fa fa-calendar-alt text-warning"></i> Lịch Chiếu Phim
+    </h2>
+
+    {% if has_showtimes %}
+        <ul class="nav nav-pills mb-4" id="pills-tab" role="tablist" style="gap: 10px;">
+            {% for date_key, info in grouped_showtimes.items() %}
+            {% if info.cinemas %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if loop.first %}active{% endif %} btn-date"
+                        id="tab-{{ loop.index }}" data-bs-toggle="pill"
+                        data-bs-target="#content-{{ loop.index }}" type="button" role="tab">
+                    <div class="date-label">
+                        <div class="weekday">{{ info.label }}</div>
+                        <div class="date">{{ date_key }}</div>
+                    </div>
+                </button>
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+
+        <div class="tab-content" id="pills-tabContent">
+            {% for date_key, info in grouped_showtimes.items() %}
+            <div class="tab-pane fade {% if loop.first %}show active{% endif %}"
+                id="content-{{ loop.index }}" role="tabpanel">
+                {% for cinema_name, st_list in info.cinemas.items() %}
+                <div class="cinema-card mb-4 p-3" style="background: #222; border-radius: 10px; border-left: 4px solid #ffc107;">
+                    <h5 class="text-white fw-bold mb-3">
+                        <i class="fa fa-map-marker-alt text-danger"></i> {{ cinema_name }}
+                    </h5>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        {% for st in st_list|sort(attribute='start_time') %}
+                        <div class="showtime-item text-center">
+                            <a href="{{ url_for('booking', showtime_id=st.id, movie_id=movie_id) }}" class="btn btn-sm btn-outline-warning py-1 px-3">
+                                <b style="font-size: 1.3rem;">{{ st.start_time.strftime('%H:%M') }}</b>
+                                <div style="font-size: 0.8rem; opacity: 0.8;">{{ st.room.name }}</div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-dark border-secondary text-center">
+            <p class="mb-0 dark" style="font-weight: bold; font-style: italic;">
+                <i class="fa fa-clock"></i> Phim hiện chưa có suất chiếu - Vui lòng quay lại sau!
+            </p>
+        </div>
+    {% endif %}
+</div>
+
+
+        <div class="container mt-5 text-white">
+            <hr style="border-color: #444;">
+            <h3>Bình luận</h3>
+
+            {% if session.get('user_email') %}
+            <form action="{{ url_for('add_comment', movie_id=movie_id) }}" method="POST" class="mb-4">
+                <textarea name="content" class="form-control bg-dark text-white border-secondary" rows="3" placeholder="Viết bình luận của bạn..." required></textarea>
+                <button type="submit" class="btn btn-warning mt-2">Gửi bình luận</button>
+            </form>
+            {% else %}
+            <p class="text-muted" style="color: gray !important;">Vui lòng <a href="{{ url_for('login') }}" class="text-warning">đăng nhập</a> để để lại bình luận.</p>
+            {% endif %}
+
+           <div class="comment-list">
+    {% for comment in comments %}
+<div class="main-comment mb-4 border-bottom border-secondary pb-3">
+    <div class="d-flex">
+        <img src="{{ url_for('static', filename=comment.user.avatar or 'images/default-avatar.png') }}" 
+             class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+        
+        <div class="w-100">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="fw-bold text-warning">{{ comment.user.username }}</span>
+                    {% if comment.user.gender in ['Nam', 'M'] %}
+                        <i class="fa fa-mars" style="color: #0099FF; font-size: 0.8rem; font-weight: bold !important;"></i>
+                    {% elif comment.user.gender in ['Nữ', 'F'] %}
+                        <i class="fa fa-venus" style="color: #FF66CC; font-size: 0.8rem; font-weight: bold !important;"></i>
+                    {% endif %}
+                    <small class="text-muted ms-2" style="color: gray !important;">{{ comment.date_commented.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+
+                {% if current_user and current_user.id == comment.user_id %}
+                <a href="{{ url_for('delete_comment', comment_id=comment.id) }}" class="text-danger small" onclick="return confirm('Xóa bình luận?')">Xóa</a>
                 {% endif %}
             </div>
+
+            <p class="mt-1 mb-1 text-white">{{ comment.content }}</p>
+            
+            <div class="d-flex align-items-center">
+                <a href="javascript:void(0)" class="text-info reply small me-3" 
+                   onclick="openReplyBox('{{ comment.id }}', '{{ comment.user.id }}', '{{ comment.user.username }}')">Trả lời</a>
+                
+                {% if comment.replies %}
+                <a href="javascript:void(0)" class="text-secondary small" onclick="toggleReplies('replies-{{ comment.id }}', this)">
+                    <i class="fa fa-comments me-1"></i> Xem {{ comment.replies|length }} câu trả lời
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="replies ms-5 mt-3" id="replies-{{ comment.id }}" style="display: none;">
+                {% for reply in comment.replies %}
+                <div class="reply-item mb-2 border-start border-secondary ps-3">
+                    <div class="d-flex align-items-start"> <img src="{{ url_for('static', filename=reply.user.avatar or 'images/default-avatar.png') }}" 
+                             class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover; border: 1px solid #444;">
+
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center flex-wrap">
+                                    <span class="fw-bold text-warning small">{{ reply.user.username }}</span>
+                                    {% if reply.user.gender in ['Nam', 'M'] %}
+                                        <i class="fa fa-mars ms-1" style="color: #0099FF; font-size: 0.8rem; font-weight: bold !important;"></i>
+                                    {% elif reply.user.gender in ['Nữ', 'F'] %}
+                                        <i class="fa fa-venus ms-1" style="color: #FF66CC; font-size: 0.8rem; font-weight: bold !important;"></i>
+                                    {% endif %}
+
+                                    {% if reply.reply_to_user %}
+                                        <i style="color: gray !important;" class="fa fa-caret-right mx-2 text-muted"></i>
+                                        <span class="text-info text-warning small">{{ reply.reply_to_user.username }}</span>
+                                        {% if reply.reply_to_user.gender in ['Nam', 'M'] %}
+                                            <i class="fa fa-mars ms-1" style="color: #0099FF; font-size: 0.7rem; font-weight: bold !important;"></i>
+                                        {% elif reply.reply_to_user.gender in ['Nữ', 'F'] %}
+                                            <i class="fa fa-venus ms-1" style="color: #FF66CC; font-size: 0.7rem; font-weight: bold !important;"></i>
+                                        {% endif %}
+                                    {% endif %}
+                                    
+                                    <small class="text-muted ms-2" style="font-size: 0.8rem; color: gray !important;">{{ reply.date_commented.strftime('%H:%M %d/%m') }}</small>
+                                </div>
+
+                                {% if current_user and current_user.id == reply.user_id %}
+                                <a href="{{ url_for('delete_comment', comment_id=reply.id) }}" class="text-danger" style="font-size: 0.8rem;" onclick="return confirm('Xóa phản hồi?')">Xóa</a>
+                                {% endif %}
+                            </div>
+
+                            <p class="mb-1 small text-white">{{ reply.content }}</p>
+                            
+                            <a href="javascript:void(0)" class="text-info reply small" 
+                               onclick="openReplyBox('{{ comment.id }}', '{{ reply.user.id }}', '{{ reply.user.username }}')" style="font-size: 0.8rem;">Trả lời</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div id="reply-form-{{ comment.id }}" style="display: none;" class="mt-2">
+                <form action="{{ url_for('add_comment', movie_id=movie_id) }}" method="POST">
+                    <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                    <input type="hidden" name="reply_to_id" id="reply_to_id_{{ comment.id }}">
+                    <small class="text-muted" style="color: gray !important">Đang trả lời: <span id="reply_name_{{ comment.id }}" class="text-info"></span></small>
+                    <textarea name="content" class="form-control bg-dark text-white border-secondary mb-2" rows="2" required></textarea>
+                    <button type="submit" class="btn btn-sm btn-warning">Gửi</button>
+                    <button type="button" class="btn btn-sm btn-link text-muted" onclick="this.parentElement.parentElement.style.display='none'">Hủy</button>
+                </form>
+            </div>
         </div>
+    </div>
+</div>
+    {% endfor %}
+</div>
     </div>
 </main>
 
@@ -128,6 +302,23 @@
         const modal = document.getElementById('trailerModal');
         if (event.target === modal) {
             closeTrailerModal();
+        }
+    }
+    function openReplyBox(parentId, targetUserId, targetUserName) {
+        const form = document.getElementById('reply-form-' + parentId);
+        form.style.display = 'block';
+        document.getElementById('reply_to_id_' + parentId).value = targetUserId;
+        document.getElementById('reply_name_' + parentId).innerText = targetUserName;
+        form.querySelector('textarea').focus();
+    }
+    function toggleReplies(id, btn) {
+        var x = document.getElementById(id);
+        if (x.style.display === "none") {
+            x.style.display = "block";
+            btn.innerHTML = '<i class="fa fa-chevron-up me-1"></i> Ẩn câu trả lời';
+        } else {
+            x.style.display = "none";
+            btn.innerHTML = '<i class="fa fa-comments me-1"></i> Xem câu trả lời';
         }
     }
 </script>

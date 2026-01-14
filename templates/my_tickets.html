@@ -1,0 +1,54 @@
+{% extends "header.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<div class="container mt-5">
+    <h2 class="text-warning mb-4"><i class="fa fa-ticket-alt"></i> VÉ ĐÃ MUA</h2>
+    
+    {% if bookings %}
+        {% for ticket in bookings %}
+        <div class="card mb-3 bg-dark text-white border-secondary shadow" style="max-width: 100%;">
+            <div class="row g-0 align-items-center">
+                <div class="col-md-2 text-center p-2">
+                    <img src="{{ ticket.movie_poster }}" class="img-fluid rounded" style="max-height: 150px;">
+                </div>
+                
+                <div class="col-md-7">
+                    <div class="card-body">
+                        <h5 class="card-title text-warning">{{ ticket.movie_title }}</h5>
+                        <p class="card-text mb-1"><strong>Ghế:</strong> <span class="badge bg-warning text-dark">{{ ticket.seats }}</span></p>
+                        <p class="card-text mb-1"><small class="text-muted">Ngày đặt: {{ ticket.booking_time.strftime('%d/%m/%Y %H:%M') }}</small></p>
+                    </div>
+                </div>
+
+                <div class="col-md-3 text-center p-3 border-start border-secondary">
+                    <p class="small mb-1">Mã QR chi tiết</p>
+                    <img src="https://quickchart.io/qr?text={{ ticket.full_info_qr | urlencode }}&size=100" 
+                        onclick="openQR('{{ ticket.full_info_qr | urlencode }}')">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5 text-muted">Bạn chưa mua vé nào.</div>
+    {% endif %}
+</div>
+
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-light text-center p-4">
+            <h5 class="text-dark">MÃ VÉ ĐIỆN TỬ</h5>
+            <div id="big-qr-container"></div>
+            <button type="button" class="btn btn-dark mt-3" data-bs-dismiss="modal">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openQR(encodedText) {
+    const qrUrl = `https://quickchart.io/qr?text=${encodedText}&size=300`;
+    document.getElementById('big-qr-container').innerHTML = `<img src="${qrUrl}" class="img-fluid" style="background:white; padding:10px;">`;
+    var myModal = new bootstrap.Modal(document.getElementById('qrModal'));
+    myModal.show();
+}
+</script>
+{% endblock %}

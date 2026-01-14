@@ -41,10 +41,8 @@
     </footer>
 
     <script>
-        // <<< BƯỚC 1: LỒNG DỮ LIỆU ĐỘNG TỪ FLASK/TMDB VÀO JS >>>
         const movies = {{ movies_data_from_server | tojson | safe }}; 
         
-        // BƯỚC 2: Khai báo các biến DOM
         const movieGrid = document.getElementById("movieGrid");
         const searchInput = document.getElementById("searchInput");
         const genreFilter = document.getElementById("genreFilter");

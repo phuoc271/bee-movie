@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thanh Toán - Bee Movie</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body style="background-color: #1a1a1a; color: white;">
+<div class="header-space">{% include "header.html" %}</div>
+<div class="container">
+    <div id="payment-form" class="payment-wrapper">
+        <div class="alert alert-info text-center">
+            <h4 class="mb-0">
+                <i class="fas fa-clock"></i> 
+                Thời gian giữ chỗ còn lại: <span id="timer" class="font-weight-bold text-danger">03:00</span>
+            </h4>
+            <small>Vui lòng hoàn tất thanh toán trong thời gian này để không bị mất ghế.</small>
+            <button onclick="cancelBooking()" class="btn btn-secondary">Hủy và chọn lại ghế</button>
+        </div>
+        <h2 style="color: var(--accent-color); text-align: center; margin-bottom: 25px;">XÁC NHẬN THANH TOÁN</h2>
+        
+        <div class="ticket-info-box">
+            <h4 style="margin: 0 0 10px 0;">{{ movie_title }}</h4>
+            <p style="color: #aaa; font-size: 14px; margin: 5px 0;">Ghế: <span style="color: white;">{{ seat_names }}</span></p>
+            Bee Mo<p style="color: #aaa; font-size: 14px; margin: 5px 0;">Suất chiếu: <span style="color: white;">{{ show_date }} lúc {{ show_time }}</span></p>
+vie            <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0;">
+            <p style="font-size: 18px; font-weight: bold; color: var(--accent-color);">Tổng tiền: <span id="display-total"></span> đ</p>
+        </div>
+
+        <h3 style="font-size: 16px; margin-bottom: 15px;">Chọn phương thức thanh toán</h3>
+        <div class="method-list">
+            <label class="method-item">
+                <input type="radio" name="pay-method" value="momo" onchange="togglePayQR()" checked>
+                <img src="{{ url_for('static', filename='image/momo.png') }}" alt="momo">
+                <span>Ví điện tử MoMo</span>
+            </label>
+            <label class="method-item">
+                <input type="radio" name="pay-method" value="vnpay" onchange="togglePayQR()">
+                <i style="color: #0033CC;" class="fa-solid fa-building-columns"></i>
+                <span>Thẻ ATM / QR Ngân hàng</span>
+            </label>
+            <label class="method-item">
+                <input type="radio" name="pay-method" value="cash" onchange="togglePayQR()">
+                <i style="color: #006600;" class="fa-solid fa-money-bill-1-wave"></i>
+                <span>Thanh toán tại quầy (Tiền mặt)</span>
+            </label>
+        </div>
+        <div id="qr-payment-area" style="text-align: center; margin: 20px 0; padding: 15px; background: #fff; border-radius: 10px; display: block;">
+            <p style="color: #333; font-weight: bold; margin-bottom: 10px;" id="qr-pay-title">Quét mã MoMo để thanh toán</p>
+            <img id="img-pay-qr" src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" width="180">
+            <p style="color: #666; font-size: 12px; margin-top: 5px;">(Đây là mã mô phỏng cho đồ án)</p>
+        </div>
+
+        <button id="btn-confirm" onclick="handlePayment()" class="btn-secondary" style="width: 100%; padding: 15px; font-size: 16px; border-radius: 8px;">
+            XÁC NHẬN & THANH TOÁN
+        </button>
+    </div>
+
+    <div id="success-screen" class="payment-wrapper">
+        <i class="fa-solid fa-circle-check" style="font-size: 60px; color: #4caf50;"></i>
+        <h2 style="color: #4caf50; margin: 15px 0;">Thanh toán thành công!</h2>
+        <p style="color: #ccc;">Vui lòng lưu lại mã QR dưới đây để check-in tại rạp.</p>
+        
+        <div class="qr-code" id="qr-container">
+            </div>
+        
+        <div style="background: #111; padding: 15px; border-radius: 8px; margin-top: 10px;">
+            <p style="font-size: 13px; color: #777;">Mã vé điện tử:</p>
+            <h3 id="ticket-id" style="letter-spacing: 2px; color: var(--accent-color);">BEE-123456</h3>
+        </div>
+
+        <button onclick="window.location.href='/'" class="btn-primary" style="margin-top: 25px; width: 100%; padding: 12px; border-radius: 8px;">
+            VỀ TRANG CHỦ
+        </button>
+    </div>
+</div>
+
+<script>
+document.getElementById('display-total').innerText = ({{ total_price }}).toLocaleString('vi-VN');
+
+    let timeLeft = 15; 
+    const timerElement = document.getElementById('timer');
+    
+    const countdown = setInterval(function() {
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
+        let displayMinutes = minutes < 10 ? "0" + minutes : minutes;
+        let displaySeconds = seconds < 10 ? "0" + seconds : seconds;
+        
+        if (timerElement) {
+            timerElement.innerHTML = displayMinutes + ":" + displaySeconds;
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            alert("Đã hết thời gian giữ chỗ! Ghế của bạn đã được giải phóng.");
+            executeCancel();
+        }
+        timeLeft--;
+    }, 1000);
+    function handlePayment() {
+        const btn = document.getElementById('btn-confirm');
+        const method = document.querySelector('input[name="pay-method"]:checked').value;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Đang xác nhận...';
+        btn.disabled = true;
+        fetch('/final_confirm_db', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                let methodText = "";
+                if (method === 'momo') methodText = "Ví MoMo";
+                else if (method === 'vnpay') methodText = "Ngân hàng (QR Pay)";
+                else methodText = "Tiền mặt tại quầy";
+                const ticketId = "BEE" + Math.floor(Math.random() * 900000);
+                const qrData = "MÃ VÉ: " + ticketId + 
+                                " | PHIM: {{ movie_title }}" + 
+                                " | GHẾ: {{ seat_names }}" + 
+                                " | NGÀY: {{ show_date }}" + 
+                                " | SUẤT: {{ show_time }}" +
+                                " | PT: " + methodText;
+                const qrUrl = "https://quickchart.io/qr?text=" + encodeURIComponent(qrData) + "&size=200";
+                document.getElementById('payment-form').style.display = 'none';
+                document.getElementById('success-screen').style.display = 'block';
+                document.getElementById('qr-container').innerHTML = `<img src="${qrUrl}">`;
+                document.getElementById('ticket-id').innerText = ticketId;
+            } else {
+                alert("Có lỗi xảy ra: " + data.message);
+                btn.innerHTML = 'XÁC NHẬN & THANH TOÁN';
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error("Lỗi:", err);
+            alert("Không thể kết nối với máy chủ!");
+            btn.disabled = false;
+        });
+    }
+    function showTicketQR() {
+            document.getElementById('payment-form').style.display = 'none';
+            document.getElementById('success-screen').style.display = 'block';
+            const randomID = "BEE" + Math.floor(Math.random() * 900000 + 100000);
+            document.getElementById('ticket-id').innerText = randomID;
+            const ticketInfo = `MaVe: ${randomID} | Phim: {{ movie_title }} | Suat: {{ showtime }} | Ghe: {{ seat_names }}`;
+            const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(ticketInfo)}&size=200&light=ffffff&dark=000000`;
+            const img = document.createElement('img');
+            img.src = qrUrl;
+            img.alt = "Vé QR";
+            document.getElementById('qr-container').appendChild(img);
+        }
+    function togglePayQR() {
+        const method = document.querySelector('input[name="pay-method"]:checked').value;
+        const qrArea = document.getElementById('qr-payment-area');
+        const qrTitle = document.getElementById('qr-pay-title');
+        const qrImg = document.getElementById('img-pay-qr');
+        const rawPrice = {{ total_price }};
+        const formattedPrice = rawPrice.toLocaleString('vi-VN');
+        if (method === 'cash') {
+            qrArea.style.display = 'none';
+        } else {
+            qrArea.style.display = 'block';
+
+            if (method === 'momo') {
+                qrTitle.innerHTML = `Quét mã MoMo để thanh toán: <span style="color: #ed2d8a;">${formattedPrice}đ</span>`;
+                qrImg.src = "{{ url_for('static', filename='image/momo2.jpg') }}";
+            } 
+            else if (method === 'vnpay') {
+                qrTitle.innerHTML = `Chuyển khoản VietQR: <span style="color: #0033CC;">${formattedPrice}đ</span>`;
+                qrImg.src = `https://img.vietqr.io/image/vietinbank-113366668888-compact.jpg?amount=${rawPrice}&addInfo=Thanh toan Bee Movie`;
+            }
+        }
+    }
+    function cancelBooking() {
+        if(confirm("Bạn có chắc chắn muốn hủy giao dịch và chọn lại ghế khác?")) {
+            executeCancel();
+        }
+    }
+
+    function executeCancel() {
+        fetch('/cancel_booking', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(() => {
+            window.location.href = "/"; 
+        })
+        .catch(() => {
+            window.location.href = "/";
+        });
+    }
+    window.onload = togglePayQR;
+</script>
+
+</body>
+</html>

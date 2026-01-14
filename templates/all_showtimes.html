@@ -1,0 +1,71 @@
+{% extends "header.html" %}
+
+{% block title %}Lịch Chiếu Toàn Hệ Thống{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-white mb-4"><i class="fa fa-calendar-alt text-warning"></i> Lịch Chiếu Phim</h2>
+
+    <ul class="nav nav-pills mb-4" id="pills-tab" role="tablist" style="gap: 10px; overflow-x: auto; white-space: nowrap; flex-wrap: nowrap; padding-bottom: 10px;">
+        {% for date_key, info in grouped.items() %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if loop.first %}active{% endif %} btn-date" 
+                    data-bs-toggle="pill" data-bs-target="#date-{{ loop.index }}" type="button">
+                <div class="text-center">
+                    <small>{{ info.label }}</small>
+                    <div class="fw-bold">{{ date_key }}</div>
+                </div>
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="tab-content pt-3">
+        {% for date_key, info in grouped.items() %}
+        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="date-{{ loop.index }}">
+            {% if info.movies %}
+                {% for m_id, m_data in info.movies.items() %}
+                <div class="movie-schedule-card mb-5 p-3" style="background: #1a1a1a; border-radius: 15px; border: 1px solid #333;">
+                    <div class="row">
+                        <div class="col-md-2 col-4">
+                            <a href="{{ url_for('movie_detail', movie_id=m_id) }}">
+                                <img src="{{ m_data.poster }}" class="img-fluid rounded shadow movie-poster-link" 
+                                     alt="{{ m_data.title }}" style="transition: transform 0.3s; cursor: pointer;">
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-10 col-8">
+                            <a href="{{ url_for('movie_detail', movie_id=m_id) }}" style="text-decoration: none;">
+                                <h4 class="text-warning fw-bold mb-3">{{ m_data.title }}</h4>
+                            </a>
+                            
+                            {% for cinema_name, st_list in m_data.cinemas.items() %}
+                            <div class="cinema-group mb-3">
+                                <h6 class="text-white-50 small"><i class="fa fa-map-marker-alt text-danger"></i> {{ cinema_name }}</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for st in st_list|sort(attribute='start_time') %}
+                                    <a href="{{ url_for('booking', showtime_id=st.id, movie_id=m_id) }}" 
+                                       class="btn btn-outline-warning btn-sm py-1 px-3">
+                                        <strong style="font-size: 1.1rem;">{{ st.start_time.strftime('%H:%M') }}</strong>
+                                        <div style="font-size: 0.7rem; opacity: 0.8;">{{ st.room.name }}</div>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="alert alert-dark d-inline-block px-5">
+                        <p class="mb-0 italic text-muted"><i class="fa fa-info-circle"></i> Chưa có lịch chiếu cho ngày này.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

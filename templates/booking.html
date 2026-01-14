@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Bee Movie - Luxury Booking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="header-space">{% include "header.html" %}</div>
+<div class="screen-area">
+    <div class="exit-label"><i class="fa fa-door-open"></i> EXIT</div>
+    <div class="screen-line"></div>
+    <p style="font-size: 12px; color: gray; letter-spacing: 10px; margin-top: 15px; font-weight: bold;">MÀN HÌNH</p>
+</div>
+
+<div class="seat-map" id="map"></div>
+
+<div class="booking-legend">
+    <div><i class="fa-solid fa-couch"></i> Thường (65k)</div>
+    <div><i class="fa-solid fa-couch" style="color: #444; border-bottom: 2px solid var(--accent-color);"></i> VIP (75k)</div>
+    <div><i class="fa-solid fa-couch" style="color: var(--accent-color);"></i> Đang chọn</div>
+    <div><i class="fa-solid fa-fire" style="color: #ff4444;"></i> Đã bán</div>
+</div>
+
+<div class="footer-booking-fixed">
+    <div>
+        <h2 style="margin: 0; color: var(--accent-color); font-size: 22px;">{{ movie.title }}</h2>
+        <p id="seatsList" style="margin: 5px 0; font-size: 15px; color: #777;">Vui lòng chọn chỗ ngồi</p>
+    </div>
+    <div style="text-align: right; display: flex; align-items: center; gap: 40px;">
+        <div>
+            <span style="font-size: 13px; color: #555; text-transform: uppercase;">Tổng tiền</span>
+            <div id="total" class="total-price-text">0đ</div>
+        </div>
+        <button class="btn-secondary" style="padding: 14px 45px; border-radius: 8px; font-weight: bold;" onclick="submit()">THANH TOÁN</button>
+    </div>
+</div>
+
+<script>
+    const map = document.getElementById('map');
+    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    const occupied = {{ occupied_seats | tojson }};
+    let selected = [];
+
+    rows.forEach(r => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'row-seats'; 
+        for (let i = 1; i <= 12; i++) {
+            const code = r + i;
+            const isVip = (r >= 'C' && r <= 'F') && (i >= 2 && i <= 11);
+            const price = isVip ? 75000 : 65000;
+            const div = document.createElement('div');
+            div.className = `seat-item ${isVip ? 'vip' : ''}`;
+            if (occupied.includes(code)) div.classList.add('occupied');
+            div.innerHTML = `<i class="fa-solid fa-couch"></i><span class="seat-code-label">${code}</span>`;
+            if (!occupied.includes(code)) {
+                div.onclick = () => {
+                    div.classList.toggle('selected');
+                    const index = selected.findIndex(s => s.code === code);
+                    if (index > -1) selected.splice(index, 1);
+                    else selected.push({ code, price });
+                    update();
+                };
+            }
+            rowDiv.appendChild(div);
+        }
+        map.appendChild(rowDiv);
+    });
+
+    function update() {
+        const total = selected.reduce((s, item) => s + item.price, 0);
+        document.getElementById('total').innerText = total.toLocaleString('vi-VN') + 'đ';
+        document.getElementById('seatsList').innerText = selected.length > 0 ? 
+            'Ghế đã chọn: ' + selected.map(s => s.code).join(', ') : 'Vui lòng chọn chỗ ngồi';
+    }
+
+    function submit() {
+        if (selected.length === 0) return alert("Bạn chưa chọn ghế nào!");
+        
+        const totalPrice = selected.reduce((s, item) => s + item.price, 0);
+
+        fetch('/confirm_booking', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                showtime_id: {{ showtime_id }},
+                movie_id: {{ movie.id }},
+                movie_title: "{{ movie.title }}", 
+                total_price: totalPrice,          
+                seats: selected.map(s => s.code)
+            })
+        }).then(res => res.json()).then(data => {
+            if (data.status === 'success') {
+                window.location.href = data.redirect;
+            }
+        });
+    }
+</script>
+</body>
+</html>
