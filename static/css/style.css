@@ -1451,3 +1451,47 @@ a.reply:hover {
     transform: scale(1.05);
     box-shadow: 0 0 15px rgba(255, 193, 7, 0.3) !important;
 }
+ /* Hiệu ứng hover cho thẻ ưu đãi */
+.promo-card {
+    border: 1px solid #333;
+    transition: all 0.3s ease-in-out;
+    background-color: #1a1a1a;
+}
+.promo-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--accent-color);
+    box-shadow: 0 10px 20px rgba(255, 193, 7, 0.2);
+}
+.promo-card:hover img {
+    transform: scale(1.1);
+}
+.promo-card:hover .btn-buy {
+    background-color: var(--accent-color) !important;
+    color: #000 !important;
+}
+.promo-detail-section { padding: 40px 10%; background-color: #000; color: #fff; }
+    .promo-breadcrumb { color: #888; font-size: 0.9rem; }
+    .promo-breadcrumb a { color: var(--accent-color); text-decoration: none; }
+    .promo-title-main { color: var(--accent-color); font-weight: 800; text-transform: uppercase; border-left: 5px solid var(--accent-color); padding-left: 15px; }
+    .promo-detail-body { line-height: 1.8; color: #ccc; }
+    .promo-detail-body h3 { color: var(--accent-color); margin-top: 25px; }
+    .promo-detail-body ul { padding-left: 20px; }
+    .promo-detail-body li { margin-bottom: 10px; }
+/* Tùy chỉnh icon mũi tên của accordion */
+    .accordion-button::after {
+        filter: brightness(0) saturate(100%) invert(84%) sepia(35%) saturate(1000%) hue-rotate(355deg) brightness(105%) contrast(105%);
+    }
+    .accordion-button:not(.collapsed) {
+        background-color: #333 !important;
+        color: white !important;
+    }
+    .accordion-item { border-radius: 8px; }
+.card:hover {
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(255, 193, 7, 0.1) !important;
+    }
+    .membership-info ul li {
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }

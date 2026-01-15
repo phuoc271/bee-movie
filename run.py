@@ -24,7 +24,7 @@ app.config['SECURITY_PASSWORD_SALT'] = 'some-random-salt-value'
 
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Phuoc2714002.@localhost:3306/bee_movie_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost:3306/bee_movie_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads/avatars'
 
@@ -1156,5 +1156,151 @@ if __name__ == '__main__':
         print("Đã tải xong thể loại.")
     except Exception as e:
         print("Lỗi tải genre khi start:", e)
+
+@app.route("/uu-dai")
+def promotions():
+    # Thêm "id" vào từng từ điển trong danh sách
+    promo_list = [
+        {
+            "id": 1, 
+            "title": "HỘI VIÊN BEE MOVIE - ĐỒNG GIÁ 45K",
+            "img": "image/uudai45k.jpg",
+            "is_internal": True,
+            "desc": "Áp dụng cho tất cả các suất chiếu từ Thứ 2 đến Thứ 6 hàng tuần cho chủ thẻ hội viên.",
+        },
+        {
+            "id": 2,
+            "title": "NGÀY HỘI CINE - THỨ 4 VUI VẺ",
+            "img": "image/ngayhoi.jpg", 
+            "is_internal": True,
+            "desc": "Đồng giá vé chỉ từ 50.000đ cho mọi khách hàng vào mỗi thứ Tư hàng tuần.",
+        }
+    ]
+    return render_template("promotions.html", promos=promo_list)
+
+@app.route("/uu-dai/<int:promo_id>")
+def promo_detail(promo_id):
+    # Trong thực tế, bạn sẽ dùng Promo.query.get(promo_id)
+    # Dưới đây là dữ liệu mẫu mô phỏng nội dung giống Mega GS
+    promos = {
+        1: {
+            "title": "MEGA HOURS - ĐỒNG GIÁ 45K",
+            "img": "image/uudai45k.jpg",
+            "is_internal": True,
+            "desc": "Ưu đãi đặc biệt dành cho các suất chiếu khung giờ vàng.",
+            "content": """
+                <h3>Nội dung chương trình:</h3>
+                <ul>
+                    <li>Đồng giá vé 45.000đ cho tất cả khách hàng.</li>
+                    <li>Áp dụng cho các suất chiếu trước 12:00 và sau 22:00.</li>
+                    <li>Không áp dụng đồng thời với các chương trình khuyến mãi khác.</li>
+                </ul>
+                <p>Địa điểm: Hệ thống rạp Bee Movie trên toàn quốc.</p>
+            """
+        },
+        2: {
+            "title": "NGÀY HỘI CINE - THỨ 4 VUI VẺ",
+            "img": "image/ngayhoi.jpg",
+            "is_internal": True,
+            "desc": "Ưu đãi đặc biệt dành cho các suất chiếu khung giờ vàng.",
+            "content": """
+                <h3>Nội dung chương trình:</h3>
+                <ul>
+                    <li>Đồng giá vé 45.000đ cho tất cả khách hàng.</li>
+                    <li>Áp dụng cho các suất chiếu trước 12:00 và sau 22:00.</li>
+                    <li>Không áp dụng đồng thời với các chương trình khuyến mãi khác.</li>
+                </ul>
+                <p>Địa điểm: Hệ thống rạp Bee Movie trên toàn quốc.</p>
+            """
+        }
+    }
+    
+    selected_promo = promos.get(promo_id)
+    if not selected_promo:
+        return "Không tìm thấy ưu đãi", 404
         
-    app.run(debug=True)
+    return render_template("promo_detail.html", promo=selected_promo)
+
+@app.route("/faqs")
+def faqs():
+    # Danh sách các câu hỏi thường gặp
+    faq_list = [
+        {
+            "question": "Làm sao để đăng ký làm thành viên Bee Movie?",
+            "answer": "Bạn có thể đăng ký trực tuyến tại trang Đăng Ký trên website hoặc đến trực tiếp quầy vé tại các cụm rạp Bee Movie để được nhân viên hỗ trợ."
+        },
+        {
+            "question": "Giá vé của Bee Movie là bao nhiêu?",
+            "answer": "Giá vé thay đổi tùy theo rạp, khung giờ và đối tượng (Học sinh, người lớn, VIP). Thông thường giá vé dao động từ 45.000đ đến 90.000đ."
+        },
+        {
+            "question": "Tôi có thể hủy vé đã đặt trực tuyến không?",
+            "answer": "Theo quy định hiện tại, vé đã thanh toán thành công không thể hủy hoặc thay đổi. Vui lòng kiểm tra kỹ thông tin trước khi xác nhận thanh toán."
+        }
+    ]
+    return render_template("faqs.html", faqs=faq_list)
+
+@app.route("/mega-plus")
+def mega_plus():
+    membership_levels = [
+        {
+            "id": "star",
+            "name": "BEE STAR",
+            "price": 50000, # Ví dụ 50,000 VND
+            "condition": "Thẻ đăng ký mới hoặc chi tiêu dưới 2.000.000đ/năm",
+            "benefits": [
+                "Tích lũy 5% giá trị giao dịch vé",
+                "Tích lũy 3% giá trị giao dịch bắp nước",
+                "Quà tặng sinh nhật: 1 combo bắp nước"
+            ],
+            "color": "#cccccc"
+        },
+        {
+            "id": "gold",
+            "name": "BEE GOLD",
+            "price": 200000, # Ví dụ 200,000 VND
+            "condition": "Chi tiêu từ 2.000.000đ đến 4.000.000đ/năm",
+            "benefits": [
+                "Tích lũy 7% giá trị giao dịch vé",
+                "Tích lũy 5% giá trị giao dịch bắp nước",
+                "Quà tặng sinh nhật: 2 vé xem phim & 1 combo",
+                "Ưu tiên nhận vé tại quầy VIP"
+            ],
+            "color": "#ffc107"
+        }
+    ]
+    return render_template("mega_plus.html", levels=membership_levels)
+
+@app.route("/buy-membership/<level_id>")
+def buy_membership(level_id):
+    # Kiểm tra đăng nhập
+    if 'user_id' not in session:
+        flash("Vui lòng đăng nhập để đăng ký hạng thẻ!", "warning")
+        return redirect(url_for('login'))
+
+    # Tìm hạng thẻ tương ứng để lấy giá
+    membership_data = {
+        "star": {"name": "BEE STAR", "price": 50000},
+        "gold": {"name": "BEE GOLD", "price": 200000}
+    }
+    
+    level = membership_data.get(level_id)
+    if not level:
+        return redirect(url_for('mega_plus'))
+
+    # Lưu thông tin tạm thời vào session để trang payment hiển thị
+    session['temp_booking'] = {
+        'movie_title': f"Nâng cấp: {level['name']}",
+        'seats': ["Thành viên " + level['name']],
+        'total_price': level['price'],
+        'showtime_id': 0, # Giá trị giả định vì không phải đặt phim
+        'cinema_name': "Hệ thống Bee Movie",
+        'room_name': "Membership",
+        'show_date': "Vĩnh viễn",
+        'show_time': "Bee+"
+    }
+    
+    return redirect(url_for('payment_page'))
+
+app.run(debug=True, use_reloader=False)
+

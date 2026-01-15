@@ -1,0 +1,48 @@
+{% extends "header.html" %}
+
+{% block title %}{{ promo.title }} - Bee Movie{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<div class="detail-page-container mt-5 mb-5">
+    <div class="container">
+        <div class="mb-4">
+            <a href="{{ url_for('promotions') }}" class="text-decoration-none" style="color: var(--accent-color);">
+                <i class="fa fa-arrow-left"></i> Quay lại danh sách ưu đãi
+            </a>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="promo-detail-img shadow-lg" style="border: 2px solid #333; border-radius: 10px; overflow: hidden;">
+                    {% if promo.is_internal %}
+                        <img src="{{ url_for('static', filename=promo.img) }}" alt="{{ promo.title }}" class="img-fluid w-100">
+                    {% else %}
+                        <img src="{{ promo.img }}" alt="{{ promo.title }}" class="img-fluid w-100">
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <h1 class="fw-bold mb-3" style="color: var(--accent-color); text-transform: uppercase;">
+                    {{ promo.title }}
+                </h1>
+                
+                <p class="fs-5 text-light opacity-75 mb-4">
+                    {{ promo.desc }}
+                </p>
+
+                <div class="promo-content-body text-light p-4 rounded" style="background-color: #1a1a1a; line-height: 1.8;">
+                    {{ promo.content | safe }}
+                </div>
+
+                <div class="mt-5">
+                    <a href="{{ url_for('all_showtimes') }}" class="btn-buy d-inline-block text-center" style="padding: 12px 50px; font-size: 1.1rem;">
+                        MUA VÉ NGAY
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
