@@ -1451,7 +1451,7 @@ a.reply:hover {
     transform: scale(1.05);
     box-shadow: 0 0 15px rgba(255, 193, 7, 0.3) !important;
 }
- /* Hiệu ứng hover cho thẻ ưu đãi */
+
 .promo-card {
     border: 1px solid #333;
     transition: all 0.3s ease-in-out;
@@ -1495,3 +1495,84 @@ a.reply:hover {
         font-size: 0.95rem;
         line-height: 1.6;
     }
+.about-hero {
+        height: 700px;
+        padding: 60px 0;
+        text-align: center;
+        background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                url('/static/image/background-logo.jpg') center/cover;
+        background-size: cover;
+        background-position: center;
+        border-bottom: 3px solid #ffc107;
+        margin-bottom: 50px;
+    }
+.bee-logo-large {
+        font-size: 4rem;
+        color: #ffc107;
+        margin-bottom: 15px;
+        text-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
+    }
+.section-title {
+        border-left: 5px solid #ffc107;
+        padding-left: 15px;
+        margin-bottom: 30px;
+        font-weight: bold;
+    }
+.feature-card {
+        background: #222;
+        border: 1px solid #333;
+        border-radius: 15px;
+        padding: 30px;
+        transition: transform 0.3s ease, border-color 0.3s ease;
+        height: 100%;
+    }
+.feature-card:hover {
+        transform: translateY(-10px);
+        border-color: #ffc107;
+    }
+.feature-icon {
+        font-size: 2.5rem;
+        color: #ffc107;
+        margin-bottom: 20px;
+    }
+.stat-box {
+        text-align: center;
+        padding: 20px;
+    }
+.stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #ffc107;
+        display: block;
+    }
+.stat-label {
+        color: #aaaaaa;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.9rem;
+    }
+.highlight-text {
+        color: #ffc107 !important;
+        font-weight: bold;
+    }
+.date-tab-btn {
+        min-width: 100px!important;
+        background: #222!important;
+        color: #fff!important;
+        border: 1px solid #444!important;
+        border-radius: 8px!important;
+        padding: 8px 15px!important;
+        transition: 0.3s!important;
+    }
+.date-tab-btn:hover { 
+    color: #ffc107!important;
+    border-color: #ffc107!important;
+}
+.date-tab-btn.active {
+        background: #ffc107 !important;
+        color: #000 !important;
+        border-color: #ffc107 !important;
+        box-shadow: 0 4px 10px rgba(255, 193, 7, 0.3);
+    }
+#dateTabsContainer::-webkit-scrollbar { height: 4px; }
+#dateTabsContainer::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }

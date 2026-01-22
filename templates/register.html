@@ -96,7 +96,6 @@
 
           <div class="mb-3">
             <label class="form-label">Mật khẩu</label>
-
             <div class="input-group position-relative">
               <input
                 type="password"
@@ -105,7 +104,6 @@
                 id="passwordInput"
                 required
               />
-
               <span
                 class="position-absolute end-0 top-50 translate-middle-y me-3"
                 style="cursor: pointer; z-index: 10; color: black"
@@ -123,12 +121,13 @@
                 type="password"
                 class="form-control"
                 name="confirm_password"
+                id="confirmPasswordInput"
                 required
               />
               <span
                 class="position-absolute end-0 top-50 translate-middle-y me-3"
                 style="cursor: pointer; z-index: 10; color: black"
-                id="togglePassword"
+                id="toggleConfirmPassword"
               >
                 <i class="fa fa-eye-slash" aria-hidden="true"></i>
               </span>
@@ -141,22 +140,25 @@
     </div>
 
     <script>
-      // Ẩn hiện password
-      const togglePassword = document.getElementById("togglePassword");
-      const passwordInput = document.getElementById("passwordInput");
+        const togglePassword = document.getElementById("togglePassword");
+        const passwordInput = document.getElementById("passwordInput");
 
-      togglePassword.addEventListener("click", function (e) {
-        // Chuyển đổi giữa 'password' và 'text'
-        const type =
-          passwordInput.getAttribute("type") === "password"
-            ? "text"
-            : "password";
-        passwordInput.setAttribute("type", type);
+        togglePassword.addEventListener("click", function () {
+          const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
+          passwordInput.setAttribute("type", type);
+          this.querySelector("i").classList.toggle("fa-eye");
+          this.querySelector("i").classList.toggle("fa-eye-slash");
+        });
 
-        // Chuyển đổi biểu tượng con mắt
-        this.querySelector("i").classList.toggle("fa-eye");
-        this.querySelector("i").classList.toggle("fa-eye-slash");
-      });
+        const toggleConfirmPassword = document.getElementById("toggleConfirmPassword");
+        const confirmPasswordInput = document.getElementById("confirmPasswordInput");
+
+        toggleConfirmPassword.addEventListener("click", function () {
+          const type = confirmPasswordInput.getAttribute("type") === "password" ? "text" : "password";
+          confirmPasswordInput.setAttribute("type", type);
+          this.querySelector("i").classList.toggle("fa-eye");
+          this.querySelector("i").classList.toggle("fa-eye-slash");
+        });
     </script>
   </body>
 </html>

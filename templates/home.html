@@ -3,119 +3,133 @@
 {% block title %}Trang Chủ - Lịch Chiếu Phim{% endblock %}
 
 {% block content %}
-    <main>
-        
-        <section class="hero-banner">
-            <div id="movieHeroCarousel" class="carousel slide" data-bs-ride="carousel">
-                
-                <div class="carousel-indicators">
-                    {% for movie in featured_movies %}
-                    <button type="button" data-bs-target="#movieHeroCarousel" data-bs-slide-to="{{ loop.index0 }}" 
-                            class="{% if loop.first %}active{% endif %}" 
-                            aria-current="true" 
-                            aria-label="Slide {{ loop.index }}">
-                    </button>
-                    {% endfor %}
-                </div>
-                
-                <div class="carousel-inner">
-                    {% for movie in featured_movies %}
-                    <div class="carousel-item {% if loop.first %}active{% endif %}" data-bs-interval="5000" style="height: 600px;">
-                        
-                        <img src="{{ movie.backdrop_url }}" class="d-block w-100" alt="{{ movie.title }}" style="height: 100%; object-fit: cover;">
-                        
-                        <div class="carousel-caption ">
-                            <h5>{{ movie.title }}</h5>
-                            <b>
-                                Thể loại:  {{ movie.genre }} <br>
-                                Ngày chiếu: {{ movie.release_date }}
-                            </b>
-                                <br>
-                            <p>
-                                {{ movie.overview | truncate(150, true) if movie.overview }}
-                            </p>
-                            <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="btn-detail">
-                                Chi Tiết & Mua Vé
-                            </a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    
-                    {% if not featured_movies %}
-                    <div class="carousel-item active" style="height: 600px; background: #222;">
-                        <div class="carousel-caption d-block">
-                            <h5>Không có Phim Nổi Bật</h5>
-                            <p>Vui lòng kiểm tra API Key hoặc dữ liệu TMDB.</p>
-                        </div>
-                    </div>
-                    {% endif %}
+<main>
 
-                </div>
-                
-                <button class="carousel-control-prev" type="button" data-bs-target="#movieHeroCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Previous</span>
+    <section class="hero-banner">
+        <div id="movieHeroCarousel" class="carousel slide" data-bs-ride="carousel">
+
+            <div class="carousel-indicators">
+                {% for movie in featured_movies %}
+                <button type="button"
+                        data-bs-target="#movieHeroCarousel"
+                        data-bs-slide-to="{{ loop.index0 }}"
+                        class="{% if loop.first %}active{% endif %}"
+                        aria-current="{% if loop.first %}true{% endif %}"
+                        aria-label="Slide {{ loop.index }}">
                 </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#movieHeroCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Next</span>
-                </button>
+                {% endfor %}
             </div>
-        </section>
 
-        <section class="movie-list">
-            <h2 class="active-movie-tab">PHIM ĐANG CHIẾU</h2>
-            
-            <div class="movies-container">
-                {% for movie in movies %}
+            <div class="carousel-inner">
+                {% for movie in featured_movies %}
+                <div class="carousel-item {% if loop.first %}active{% endif %}"
+                     data-bs-interval="5000"
+                     style="height: 600px;">
+
+                    <img src="{{ movie.backdrop_url }}"
+                         class="d-block w-100"
+                         alt="{{ movie.title }}"
+                         style="height: 100%; object-fit: cover;">
+
+                    <div class="carousel-caption">
+                        <h5>{{ movie.title }}</h5>
+                        <b>
+                            Thể loại: {{ movie.genre }} <br>
+                            Ngày chiếu: {{ movie.release_date }}
+                        </b>
+                        <br>
+                        <p>
+                            {% if movie.overview %}
+                                {{ movie.overview|truncate(150, True) }}
+                            {% endif %}
+                        </p>
+
+                        <a href="/movie/{{ movie.id }}" class="btn-detail">
+                            Chi Tiết & Mua Vé
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+
+                {% if not featured_movies %}
+                <div class="carousel-item active" style="height: 600px; background: #222;">
+                    <div class="carousel-caption d-block">
+                        <h5>Không có Phim Nổi Bật</h5>
+                        <p>Vui lòng kiểm tra API Key hoặc dữ liệu TMDB.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <button class="carousel-control-prev" type="button"
+                    data-bs-target="#movieHeroCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+
+            <button class="carousel-control-next" type="button"
+                    data-bs-target="#movieHeroCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon"></span>
+            </button>
+        </div>
+    </section>
+
+    <section class="movie-list">
+        <h2 class="active-movie-tab">PHIM ĐANG CHIẾU</h2>
+
+        <div class="movies-container">
+            {% for movie in movies %}
+            <div class="movie-card">
+                {% if movie.poster_url %}
+                <img src="{{ movie.poster_url }}" alt="{{ movie.title }}">
+                {% else %}
+                <img src="https://via.placeholder.com/250x350/333333/FFFFFF?text=Không+có+Poster"
+                     alt="{{ movie.title }}">
+                {% endif %}
+
+                <div class="movie-info">
+                    <h3>{{ movie.title }}</h3>
+                    <p>Khởi chiếu: {{ movie.release_date }}</p>
+                    <a href="/movie/{{ movie.id }}" class="btn-buy">MUA VÉ</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <a href="/now-playing" class="view-all">Xem tất cả</a>
+    </section>
+
+    <hr style="border-top: 2px solid #333; margin: 40px 0;">
+
+    <section class="movie-list">
+        <h2 class="active-movie-tab">PHIM SẮP CHIẾU</h2>
+
+        <div class="movies-container">
+            {% if upcoming %}
+                {% for movie in upcoming[:8] %}
                 <div class="movie-card">
                     {% if movie.poster_url %}
                     <img src="{{ movie.poster_url }}" alt="{{ movie.title }}">
                     {% else %}
-                    <img src="https://via.placeholder.com/250x350/333333/FFFFFF?text=Không+có+Poster" alt="{{ movie.title }}">
+                    <img src="https://via.placeholder.com/250x350/333333/FFFFFF?text=SẮP+CHIẾU"
+                         alt="{{ movie.title }}">
                     {% endif %}
-                    
+
                     <div class="movie-info">
                         <h3>{{ movie.title }}</h3>
-                        <p>Khởi chiếu: **{{ movie.release_date }}**</p>
-                        <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="btn-buy">MUA VÉ</a>
+                        <p>Khởi chiếu: {{ movie.release_date }}</p>
+                        <a href="/movie/{{ movie.id }}" class="btn-buy">CHI TIẾT</a>
                     </div>
                 </div>
                 {% endfor %}
-            </div>
-            
-            <a href="{{ url_for('now_playing') }}" class="view-all">Xem tất cả</a>
-            
-        </section>
-        
-        <hr style="border-top: 2px solid #333; margin: 40px 0;">
+            {% else %}
+                <p style="text-align: center; width: 100%; padding: 20px;">
+                    Hiện tại chưa có thông tin phim sắp chiếu.
+                </p>
+            {% endif %}
+        </div>
 
-        <section class="movie-list">
-            <h2 class="active-movie-tab">PHIM SẮP CHIẾU</h2>
-            
-            <div class="movies-container">
-                {% if upcoming %}
-                    {% for movie in upcoming[:8] %} <div class="movie-card">
-                        {% if movie.poster_url %}
-                        <img src="{{ movie.poster_url }}" alt="{{ movie.title }}">
-                        {% else %}
-                        <img src="https://via.placeholder.com/250x350/333333/FFFFFF?text=SẮP+CHIẾU" alt="{{ movie.title }}">
-                        {% endif %}
-                        
-                        <div class="movie-info">
-                        <h3>{{ movie.title }}</h3>
-                        <p>Khởi chiếu: **{{ movie.release_date }}**</p>
-                        <a href="{{ url_for('movie_detail', movie_id=movie.id) }}" class="btn-buy">CHI TIẾT</a>
-                    </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p style="text-align: center; width: 100%; padding: 20px;">Hiện tại chưa có thông tin phim sắp chiếu.</p>
-                {% endif %}
-            </div>
-            
-            <a href="{{ url_for('upcoming') }}" class="view-all">Xem tất cả</a>
-        </section>
-        
-        </main>
+        <a href="/upcoming" class="view-all">Xem tất cả</a>
+    </section>
+
+</main>
 {% endblock %}

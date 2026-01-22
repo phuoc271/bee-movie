@@ -1,0 +1,30 @@
+[33mcommit 474fb71019caf6d22783000fa4ca2915c7694227[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Merge: 2ea42de 36e6d11
+Author: phuoc271 <168509281+phuoc271@users.noreply.github.com>
+Date:   Fri Nov 14 21:01:19 2025 +0700
+
+    Merged remote history with local using allow-unrelated-histories
+
+[33mcommit 36e6d11720e3b9168d8132992d3cd681834f60a0[m
+Author: Đoàn Gia Khiêm <khiemtks31@gmail.com>
+Date:   Fri Nov 14 20:11:39 2025 +0700
+
+    Initial commit
+
+[33mcommit 2ea42de9e463d85f4e0d83b7a2e0068c90217de1[m
+Author: phuoc271 <168509281+phuoc271@users.noreply.github.com>
+Date:   Wed Nov 12 19:24:22 2025 +0700
+
+    Thêm đăng ký , đăng nhập , đăng xuất , đăng nhập nhanh bằng google , quên mật khẩu
+
+[33mcommit c4925a933f8d73b989e9adbe35237e08273b27aa[m
+Author: phuoc271 <168509281+phuoc271@users.noreply.github.com>
+Date:   Thu Nov 6 22:54:16 2025 +0700
+
+    Initial commit
+
+[33mcommit ce2e0c9e0c9b3a6f9dc57098ebdb741e97d9ec54[m
+Author: phuoc271 <168509281+phuoc271@users.noreply.github.com>
+Date:   Thu Nov 6 22:51:15 2025 +0700
+
+    first commit

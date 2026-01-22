@@ -4,85 +4,6 @@
 
 {% block content %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-<style>
-    :root {
-        --primary-gold: #ffc107;
-        --card-bg: #222;
-        --text-muted: #aaaaaa;
-    }
-
-    .about-hero {
-        height: 700px;
-        padding: 60px 0;
-        text-align: center;
-        background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
-                url('/static/image/background-logo.jpg') center/cover;
-        background-size: cover;
-        background-position: center;
-        border-bottom: 3px solid var(--primary-gold);
-        margin-bottom: 50px;
-    }
-
-    .bee-logo-large {
-        font-size: 4rem;
-        color: var(--primary-gold);
-        margin-bottom: 15px;
-        text-shadow: 0 0 20px rgba(255, 193, 7, 0.5);
-    }
-
-    .section-title {
-        border-left: 5px solid var(--primary-gold);
-        padding-left: 15px;
-        margin-bottom: 30px;
-        font-weight: bold;
-    }
-
-    .feature-card {
-        background: var(--card-bg);
-        border: 1px solid #333;
-        border-radius: 15px;
-        padding: 30px;
-        transition: transform 0.3s ease, border-color 0.3s ease;
-        height: 100%;
-    }
-
-    .feature-card:hover {
-        transform: translateY(-10px);
-        border-color: var(--primary-gold);
-    }
-
-    .feature-icon {
-        font-size: 2.5rem;
-        color: var(--primary-gold);
-        margin-bottom: 20px;
-    }
-
-    .stat-box {
-        text-align: center;
-        padding: 20px;
-    }
-
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: var(--primary-gold);
-        display: block;
-    }
-
-    .stat-label {
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-size: 0.9rem;
-    }
-
-    .highlight-text {
-        color: var(--primary-gold);
-        font-weight: bold;
-    }
-</style>
-
 <main>
     <div class="about-hero">
         <div class="container">
@@ -102,7 +23,7 @@
                 <p>Tại Bee Movie, chúng tôi tin rằng mỗi bộ phim là một hành trình cảm xúc. Đó là lý do chúng tôi luôn nỗ lực tối ưu hóa hệ thống để bạn có thể tìm thấy suất chiếu và chỗ ngồi ưng ý nhất chỉ trong vài cú nhấp chuột.</p>
             </div>
             <div class="col-md-6 text-center">
-                <div class="p-4" style="background: var(--card-bg); border-radius: 20px;">
+                <div class="p-4" style="background: #222; border-radius: 20px;">
                     <div class="row">
                         <div class="col-6 stat-box border-bottom border-end border-secondary">
                             <span class="stat-number">50+</span>
@@ -133,7 +54,7 @@
                 <div class="feature-card text-center">
                     <i class="fas fa-bolt feature-icon"></i>
                     <h4>Đặt Vé Nhanh Chóng</h4>
-                    <p class="text-muted" style="color: gray !important;">Hệ thống xử lý thời gian thực, giúp bạn giữ chỗ chỉ trong 30 giây.</p>
+                    <p class="text-muted" style="color: gray !important;">Hệ thống xử lý thời gian thực, giúp bạn giữ chỗ chỉ trong 3 phút.</p>
                 </div>
             </div>
             <div class="col-md-4">
@@ -152,7 +73,7 @@
             </div>
         </div>
 
-        <div class="mt-5 p-5 text-center" style="background: linear-gradient(45deg, #333, #222); border-radius: 20px; border: 1px solid var(--primary-gold);">
+        <div class="mt-5 p-5 text-center" style="background: linear-gradient(45deg, #333, #222); border-radius: 20px; border: 1px solid #ffc107;">
             <h3 class="mb-3">Sẵn sàng trải nghiệm điện ảnh đỉnh cao?</h3>
             <p class="mb-4 text-muted"  style="color: gray !important;">Đăng ký thành viên ngay hôm nay để nhận ưu đãi 50% cho vé đầu tiên.</p>
             <a href="{{ url_for('now_playing') }}" class="btn btn-warning btn-lg px-5 fw-bold">Xem Phim Ngay</a>

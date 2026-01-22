@@ -1,0 +1,93 @@
+{% extends "header.html" %}
+
+{% block title %}Hệ Thống Rạp & Giá Vé - Bee Movie{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-6">
+            <h2 class="text-white mb-0"><i class="fa fa-film text-warning"></i> Hệ Thống Rạp Bee Movie</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <select class="form-select bg-dark text-warning border-warning w-auto d-inline-block" onchange="location = this.value;">
+                <option value="{{ url_for('cinemas') }}">--- Chọn Rạp ---</option>
+                {% for cinema in all_cinemas %}
+                <option value="{{ url_for('cinemas', cinema_id=cinema.id) }}" {% if selected_cinema and selected_cinema.id == cinema.id %}selected{% endif %}>
+                    {{ cinema.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    {% if selected_cinema %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card bg-dark text-white border-secondary mb-4 shadow">
+                <div class="card-body">
+                    <h4 class="text-warning border-bottom border-warning pb-2">{{ selected_cinema.name }}</h4>
+                    <p class="small"><i class="fa fa-map-marker-alt text-danger"></i> {{ selected_cinema.location }}</p>
+                    <h5 class="mt-4 mb-3">Bảng Giá Vé (2D)</h5>
+                    <ul class="list-unstyled small">
+                        <li class="d-flex justify-content-between"><span>T2 - T6:</span> <span class="text-warning">ghế thường: 65.000đ | ghế VIP 75.000đ</span></li>
+                        <li class="d-flex justify-content-between"><span>T7, CN, lễ tết:</span> <span class="text-warning">ghế thường: 85.000đ | ghế VIP 95.000đ</span></li>
+                        <li class="d-flex justify-content-between"><span>HSSV (chỉ áp dụng tại quầy):</span> <span class="text-warning">55.000đ</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="d-flex gap-2 mb-4 overflow-auto pb-2" id="dateTabsContainer">
+                {% for tab in date_tabs %}
+                <button class="btn date-tab-btn {% if loop.first %}active{% endif %}" onclick="showDate('{{ tab.date }}', this)">
+                    <span class="d-block small">{{ tab.label }}</span>
+                    <strong>{{ tab.date }}</strong>
+                </button>
+                {% endfor %}
+            </div>
+
+            <div id="cinemaShowtimes">
+                {% for date_key, movies in grouped_data.items() %}
+                <div class="date-content" id="date-{{ date_key }}" style="display: {% if loop.first %}block{% else %}none{% endif %};">
+                    {% for m_id, m_data in movies.items() %}
+                    <div class="movie-schedule-card mb-4 p-3" style="background: #1a1a1a; border-radius: 12px; border: 1px solid #333;">
+                        <div class="row g-3">
+                            <div class="col-md-3 col-4">
+                                <a href="{{ url_for('movie_detail', movie_id=m_id) }}">
+                                <img src="{{ m_data.poster }}" class="img-fluid rounded shadow movie-poster-link" 
+                                     alt="{{ m_data.title }}" style="transition: transform 0.3s; cursor: pointer;">
+                                </a>
+                            </div>
+                            <div class="col-md-9 col-8">
+                                <h5 class="text-warning fw-bold">{{ m_data.title }}</h5>
+                                <div class="d-flex flex-wrap gap-2 mt-3">
+                                    {% for st in m_data.showtimes %}
+                                    <a href="{{ url_for('booking', showtime_id=st.id, movie_id=movie_id) }}" class="btn btn-outline-warning btn-sm">
+                                        <strong>{{ st.time }}</strong>
+                                        <div style="font-size: 10px;">{{ st.room_name }}</div>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function showDate(date, btn) {
+    document.querySelectorAll('.date-content').forEach(el => el.style.display = 'none');
+    const target = document.getElementById('date-' + date);
+    if (target) target.style.display = 'block';
+    document.querySelectorAll('.date-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+</script>
+{% endblock %}
