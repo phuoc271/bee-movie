@@ -150,59 +150,72 @@ def auth_routes(app):
             user = get_user_by_email(email)
 
             if user:
-                token = get_reset_token(email)
-                reset_link = url_for('reset_token', token=token, _external=True)
-                from flask_mail import Message
-                msg = Message('Yêu cầu Đặt lại Mật khẩu',
-                              sender=current_app.config.get('MAIL_USERNAME'),
-                              recipients=[email])
-                msg.body = f'''Để đặt lại mật khẩu của bạn, nhấn vào link:
-{reset_link}
+                import secrets
+                new_password = secrets.token_hex(4)  
+                user.set_password(new_password)
+                try:
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"LỖI DB KHI RESET MẬT KHẨU: {e}")
+                    flash("Có lỗi xảy ra, không thể cập nhật mật khẩu.", "danger")
+                    return redirect(url_for('reset_request'))
 
-Link hết hạn sau 30 phút.
-'''
+                from flask_mail import Message
+                msg = Message('Mật khẩu mới của bạn',
+                            sender=current_app.config.get('MAIL_USERNAME'),
+                            recipients=[email])
+                msg.body = f'''Xin chào {user.fullname},
+
+    Mật khẩu mới của bạn là: {new_password}
+
+    Vui lòng đăng nhập bằng mật khẩu này và đổi lại mật khẩu sau khi đăng nhập.
+    '''
                 try:
                     mail.send(msg)
-                    flash('Email đặt lại mật khẩu đã được gửi!', 'info')
+                    flash('Mật khẩu mới đã được gửi qua email!', 'info')
                 except Exception as e:
                     print("MAIL SEND ERROR:", e)
                     flash('Gửi email thất bại. Kiểm tra cấu hình SMTP.', 'danger')
+
                 return redirect(url_for('login'))
             else:
                 flash('Email không tồn tại trong hệ thống.', 'danger')
+
         return render_template('reset_request.html')
 
-    @app.route("/reset_password/<token>", methods=['GET', 'POST'])
-    def reset_token(token):
-        email = verify_reset_token(token, max_age=1800)
-        if email is None:
-            flash('Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.', 'warning')
-            return redirect(url_for('reset_request'))
+    @app.route("/change_password", methods=["GET", "POST"])
+    def change_password():
+        if "user_email" not in session:
+            flash("Vui lòng đăng nhập để đổi mật khẩu.", "warning")
+            return redirect(url_for("login"))
 
-        user = get_user_by_email(email)
-        if user is None:
-            flash('Tài khoản không tồn tại.', 'danger')
-            return redirect(url_for('reset_request'))
+        user = get_user_by_email(session["user_email"])
 
         if request.method == "POST":
-            new_password = request.form.get('new_password')
-            confirm_password = request.form.get('confirm_password')
+            old_password = request.form.get("old_password")
+            new_password = request.form.get("new_password")
+            confirm_password = request.form.get("confirm_password")
+
+            if not user.check_password(old_password):
+                flash("Mật khẩu cũ không đúng!", "danger")
+                return render_template("reset_token.html", user=user)
 
             if new_password != confirm_password:
-                flash("Mật khẩu không khớp!", "danger")
-                return render_template('reset_token.html', title='Đặt lại Mật khẩu', token=token)
+                flash("Mật khẩu mới không khớp!", "danger")
+                return render_template("reset_token.html", user=user)
 
             user.set_password(new_password)
             try:
                 db.session.commit()
-                flash('Mật khẩu của bạn đã được cập nhật!', 'success')
-                return redirect(url_for('login'))
+                flash("Đổi mật khẩu thành công!", "success")
+                return redirect(url_for("profile"))
             except Exception as e:
                 db.session.rollback()
-                print(f"LỖI DB KHI CẬP NHẬT MẬT KHẨU: {e}")
-                flash('Có lỗi xảy ra, không thể cập nhật mật khẩu.', 'danger')
+                print(f"LỖI DB KHI ĐỔI MẬT KHẨU: {e}")
+                flash("Có lỗi xảy ra, không thể cập nhật mật khẩu.", "danger")
 
-        return render_template('reset_token.html', title='Đặt lại Mật khẩu', token=token)
+        return render_template("reset_token.html", user=user)
 
     @app.route("/profile", methods=["GET", "POST"])
     def update_profile():
@@ -291,6 +304,3 @@ Link hết hạn sau 30 phút.
             flash("Không thể xóa tài khoản do có ràng buộc dữ liệu.", "danger")
         
         return redirect(url_for("home"))
-
-
-

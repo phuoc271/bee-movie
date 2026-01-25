@@ -23,12 +23,11 @@
         <h3 class="text-center mb-4 text-warning">Đăng nhập</h3>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
+                {% if messages %}
+                    {% set category, message = messages[0] %}
                     <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+                {% endif %}
+            {% endwith %}
 
         <form method="POST">
 

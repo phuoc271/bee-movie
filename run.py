@@ -25,7 +25,7 @@ def create_app():
     app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'nguyenhoaiphuoc271@gmail.com')
-    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'your-mail-app-password')
+    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'khrh snlo wgth pdeu')
 
     app.config["TMDB_API_KEY"] = os.environ.get("TMDB_API_KEY", "f39ba5c15f6a58e7a1bfec8acefe938e")
     app.config["TMDB_BASE_URL"] = os.environ.get("TMDB_BASE_URL", "https://api.themoviedb.org/3")
