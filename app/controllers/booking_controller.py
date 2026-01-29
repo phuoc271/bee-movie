@@ -95,67 +95,6 @@ def register_movie_routes(app):
         ]
         return render_template("faqs.html", faqs=faq_list)
 
-    @app.route("/mega-plus")
-    def mega_plus():
-        membership_levels = [
-            {
-                "id": "star",
-                "name": "BEE STAR",
-                "price": 50000, 
-                "condition": "Thẻ đăng ký mới hoặc chi tiêu dưới 2.000.000đ/năm",
-                "benefits": [
-                    "Tích lũy 5% giá trị giao dịch vé",
-                    "Tích lũy 3% giá trị giao dịch bắp nước",
-                    "Quà tặng sinh nhật: 1 combo bắp nước"
-                ],
-                "color": "#cccccc"
-            },
-            {
-                "id": "gold",
-                "name": "BEE GOLD",
-                "price": 200000, 
-                "condition": "Chi tiêu từ 2.000.000đ đến 4.000.000đ/năm",
-                "benefits": [
-                    "Tích lũy 7% giá trị giao dịch vé",
-                    "Tích lũy 5% giá trị giao dịch bắp nước",
-                    "Quà tặng sinh nhật: 2 vé xem phim & 1 combo",
-                    "Ưu tiên nhận vé tại quầy VIP"
-                ],
-                "color": "#ffc107"
-            }
-        ]
-        return render_template("mega_plus.html", levels=membership_levels)
-
-    @app.route("/buy-membership/<level_id>")
-    def buy_membership(level_id):
-        if 'user_id' not in session:
-            flash("Vui lòng đăng nhập để đăng ký hạng thẻ!", "warning")
-            return redirect(url_for('login'))
-
-        membership_data = {
-            "star": {"name": "BEE STAR", "price": 50000},
-            "gold": {"name": "BEE GOLD", "price": 200000}
-        }
-        
-        level = membership_data.get(level_id)
-        if not level:
-            return redirect(url_for('mega_plus'))
-
-        session['temp_booking'] = {
-            'movie_title': f"Nâng cấp: {level['name']}",
-            'seats': ["Thành viên " + level['name']],
-            'total_price': level['price'],
-            'showtime_id': 0,
-            'cinema_name': "Hệ thống Bee Movie",
-            'room_name': "Membership",
-            'show_date': "Vĩnh viễn",
-            'show_time': "Bee+"
-        }
-        
-        return redirect(url_for('payment_page'))
-
-movie_routes = register_movie_routes
-
 
 def register_booking_routes(app):
     @app.route("/booking/<int:showtime_id>")
