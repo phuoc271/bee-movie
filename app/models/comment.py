@@ -10,6 +10,10 @@ class Comment(db.Model):
     content = db.Column(db.Text, nullable=False)
     date_commented = db.Column(db.DateTime, default=db.func.current_timestamp())
     
+    stars = db.Column(db.Integer, default=0) 
+    sentiment_score = db.Column(db.Float, default=0.0)
+    final_rating = db.Column(db.Float, default=0.0)
+
     parent_id = db.Column(db.Integer, db.ForeignKey('comments.id'), nullable=True)
     reply_to_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 

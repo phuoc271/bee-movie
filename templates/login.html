@@ -53,8 +53,8 @@
             <button class="btn btn-secondary w-100">Đăng nhập</button>
 
             <div class="text mt-3" style="justify-content: space-between; display: flex;">
-                <a href="/register" class="text-warning">Đăng ký</a>
-                <a href="/reset_password" class="text-warning">Quên mật khẩu</a>
+                <a href="{{ url_for('auth.register') }}" class="text-warning">Đăng ký</a>
+                <a href="{{ url_for('auth.reset_password') }}" class="text-warning">Quên mật khẩu</a>
             </div>
 
             <div class="text-center my-3">Hoặc</div>

@@ -1,0 +1,83 @@
+{% extends "header.html" %}
+
+{% block title %}Giỏ Hàng - Bee Movie Cinema{% endblock %}
+
+{% block content %}
+<main style="background-color: #000; color: #fff; min-height: 100vh; padding: 40px 10%;">
+    <h2 style="color: #ffc107; border-bottom: 2px solid #ffc107; display: inline-block; padding-bottom: 10px; margin-bottom: 30px; text-transform: uppercase;">
+        Giỏ Hàng Của Bạn
+    </h2>
+
+    {% if cart_items %}
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="background: #1a1a1a; border-radius: 15px; overflow: hidden; border: 1px solid #333;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead style="background: #222; color: #ffc107;">
+                    <tr>
+                        <th style="padding: 15px;">Sản phẩm</th>
+                        <th style="padding: 15px;">Giá</th>
+                        <th style="padding: 15px; text-align: center;">Số lượng</th>
+                        <th style="padding: 15px;">Tổng</th>
+                        <th style="padding: 15px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                    <tr style="border-bottom: 1px solid #333;">
+                        <td style="padding: 15px; display: flex; align-items: center; gap: 15px;">
+                            <img src="{{ url_for('static', filename=item.img) }}" alt="{{ item.name }}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">
+                            <div>
+                                <h4 style="margin: 0;">{{ item.name }}</h4>
+                                <small style="color: #888;">{{ item.category }}</small>
+                            </div>
+                        </td>
+                        <td style="padding: 15px;">{{ "{:,.0f}".format(item.price) }} đ</td>
+                        <td style="padding: 15px; text-align: center;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                <a href="{{ url_for('booking.update_cart', item_id=item.id, action='decrease') }}" style="color: #ffc107; text-decoration: none; font-weight: bold; font-size: 1.2rem;">−</a>
+                                <span style="background: #333; padding: 5px 15px; border-radius: 5px;">{{ item.quantity }}</span>
+                                <a href="{{ url_for('booking.update_cart', item_id=item.id, action='increase') }}" style="color: #ffc107; text-decoration: none; font-weight: bold; font-size: 1.2rem;">+</a>
+                            </div>
+                        </td>
+                        <td style="padding: 15px; color: #ffc107; font-weight: bold;">
+                            {{ "{:,.0f}".format(item.price * item.quantity) }} đ
+                        </td>
+                        <td style="padding: 15px; text-align: center;">
+                            <a href="{{ url_for('booking.remove_from_cart', item_id=item.id) }}" style="color: #ff4444; text-decoration: none; font-size: 1.2rem;">&times;</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+            <div style="background: #1a1a1a; padding: 25px; border-radius: 15px; border: 1px solid #333; width: 350px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <span>Tạm tính:</span>
+                    <span>{{ "{:,.0f}".format(total_price) }} đ</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 1.2rem; font-weight: bold; color: #ffc107;">
+                    <span>Tổng cộng:</span>
+                    <span>{{ "{:,.0f}".format(total_price) }} đ</span>
+                </div>
+                <a href="{{ url_for('booking.cart_checkout') }}" style="background: #ffc107; color: #000; display: block; text-align: center; padding: 15px; border-radius: 8px; text-decoration: none; font-weight: bold; transition: 0.3s;">
+                    TIẾN HÀNH THANH TOÁN
+                </a>
+                <a href="{{ url_for('booking.concessions') }}" style="display: block; text-align: center; margin-top: 15px; color: #aaa; text-decoration: none; font-size: 0.9rem;">
+                    &larr; Tiếp tục chọn món
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 100px 0;">
+        <div style="font-size: 4rem; color: #333; margin-bottom: 20px;">🛒</div>
+        <h3 style="color: #888;">Giỏ hàng của bạn đang trống</h3>
+        <a href="{{ url_for('booking.concessions') }}" style="display: inline-block; margin-top: 20px; background: #ffc107; color: #000; padding: 12px 30px; border-radius: 30px; text-decoration: none; font-weight: bold;">
+            QUAY LẠI MUA SẮM
+        </a>
+    </div>
+    {% endif %}
+</main>
+{% endblock %}

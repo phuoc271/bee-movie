@@ -28,14 +28,14 @@
                 <div class="movie-schedule-card mb-5 p-3" style="background: #1a1a1a; border-radius: 15px; border: 1px solid #333;">
                     <div class="row">
                         <div class="col-md-2 col-4">
-                            <a href="{{ url_for('movie_detail', movie_id=m_id) }}">
+                            <a href="{{ url_for('movie.movie_detail', movie_id=m_id) }}">
                                 <img src="{{ m_data.poster }}" class="img-fluid rounded shadow movie-poster-link" 
                                      alt="{{ m_data.title }}" style="transition: transform 0.3s; cursor: pointer;">
                             </a>
                         </div>
                         
                         <div class="col-md-10 col-8">
-                            <a href="{{ url_for('movie_detail', movie_id=m_id) }}" style="text-decoration: none;">
+                            <a href="{{ url_for('movie.movie_detail', movie_id=m_id) }}" style="text-decoration: none;">
                                 <h4 class="text-warning fw-bold mb-3">{{ m_data.title }}</h4>
                             </a>
                             
@@ -44,7 +44,7 @@
                                 <h6 class="text-white-50 small"><i class="fa fa-map-marker-alt text-danger"></i> {{ cinema_name }}</h6>
                                 <div class="d-flex flex-wrap gap-2">
                                     {% for st in st_list|sort(attribute='start_time') %}
-                                    <a href="{{ url_for('booking', showtime_id=st.id, movie_id=m_id) }}" 
+                                    <a href="{{ url_for('booking.booking', showtime_id=st.id, movie_id=m_id) }}" 
                                        class="btn btn-outline-warning btn-sm py-1 px-3">
                                         <strong style="font-size: 1.1rem;">{{ st.start_time.strftime('%H:%M') }}</strong>
                                         <div style="font-size: 0.7rem; opacity: 0.8;">{{ st.room.name }}</div>

@@ -1,9 +1,13 @@
 Flask
 Flask-Mail
 flask-caching
+flask-login
 google-auth-oauthlib
 google-auth
 requests
 PyMySQL 
 Flask-SQLAlchemy
 apscheduler
+python-dotenv
+protobuf<5.0.0
+google-generativeai

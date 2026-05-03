@@ -6,4 +6,5 @@ class Room(db.Model):
     cinema_id = db.Column(db.Integer, db.ForeignKey('cinemas.id'), nullable=False)
     name = db.Column(db.String(50), nullable=False)
     capacity = db.Column(db.Integer, default=50)
+    cinema = db.relationship('Cinema', back_populates='rooms')
     showtimes = db.relationship('Showtime', backref='room', lazy=True)

@@ -1,7 +1,8 @@
-from app.extensions import db
+from app.extensions import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     """Mô hình người dùng ánh xạ tới bảng 'users' trong MySQL."""
     __tablename__ = 'users'
     
@@ -12,7 +13,11 @@ class User(db.Model):
     gender = db.Column(db.String(10), nullable=True)
     avatar = db.Column(db.String(255), nullable=True)
     password_hash = db.Column(db.String(256), nullable=True) 
-    comments = db.relationship('Comment', foreign_keys='Comment.user_id', back_populates='user', cascade="all, delete-orphan")
+    role = db.Column(db.String(20), nullable=False, default='user')
+    comments = db.relationship('Comment', foreign_keys='Comment.user_id', back_populates='user', cascade="all, delete-orphan", overlaps="comments,user_comments")
+    ratings = db.relationship('Rating', back_populates='user', cascade="all, delete-orphan")
+    bookings = db.relationship('Booking', back_populates='user', cascade="all, delete-orphan")
+
 
     def set_password(self, password):
         """Hash mật khẩu và lưu vào cột password_hash."""
@@ -22,5 +27,11 @@ class User(db.Model):
         """Kiểm tra mật khẩu nhập vào có khớp với mật khẩu hash không."""
         return check_password_hash(self.password_hash, password)
 
+    def is_admin(self):
+        return self.role == 'admin'
+
     def __repr__(self):
-        return f'<User {self.email}>'
+        return f'<User {self.email} - Role {self.role}>'
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))

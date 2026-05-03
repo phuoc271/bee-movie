@@ -1,0 +1,273 @@
+{% extends "header.html" %}
+
+{% block content %}
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div id="reader" style="width: 100%; border-radius: 10px; overflow: hidden; background: #000; min-height: 250px;"></div>
+    
+            <div class="text-center mt-3">
+                <button id="btn-toggle-cam" class="btn btn-outline-info w-100" onclick="toggleCamera()">
+                    <i class="fas fa-video"></i> MỞ CAMERA QUÉT VÉ
+                </button>
+            </div>
+
+            <div class="text-center my-3 text-muted">--- HOẶC ---</div>
+            
+            <div class="input-group">
+                <input type="text" id="manual_id" class="form-control bg-secondary text-white border-0" placeholder="Nhập mã vé...">
+                <button class="btn btn-warning" onclick="fetchTicket(document.getElementById('manual_id').value)">XEM</button>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div id="pos_placeholder" class="d-flex flex-column align-items-center justify-content-center bg-dark text-muted rounded shadow border border-secondary" style="min-height: 450px;">
+                <i class="fas fa-qrcode fa-5x mb-3"></i>
+                <h4 class="text-warning">SẴN SÀNG QUÉT VÉ</h4>
+                <p class="text-white-50">Vui lòng đưa mã QR vào vùng nhận diện hoặc nhập mã tay</p>
+            </div>
+            <div id="ticket_info_card" class="card bg-dark text-white border-secondary shadow" style="display: none;">
+                <div class="card-header border-success d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-success"><i class="fas fa-ticket-alt"></i> CHI TIẾT THANH TOÁN</h5>
+                    <span id="badge_status" class="badge"></span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label class="text-white-50 small">MÃ VÉ</label>
+                            <h3 id="display_id" class="text-warning">--</h3>
+                            <div id="display_customer" class="fw-bold text-white-50">--</div> 
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-secondary rounded mb-3">
+                        <div class="mb-3">
+                            <label class="text-white-50 small d-block">TÊN PHIM:</label>
+                            <h4 id="display_movie" class="text-warning fw-bold mb-0">--</h4>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-2">
+                                <label class="text-white-50 small d-block">RẠP & PHÒNG:</label>
+                                <span id="display_cinema_room" class="fw-bold">--</span>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="text-white-50 small d-block">SUẤT CHIẾU:</label>
+                                <span id="display_showtime" class="fw-bold">--</span>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="text-white-50 small d-block">GHẾ NGỒI:</label>
+                                <span id="display_seats" class="badge border border-warning text-warning fs-6">--</span>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="text-white-50 small d-block">DỊCH VỤ KÈM THEO:</label>
+                                <div id="display_foods" class="small text-info">--</div>
+                            </div>
+                        </div>
+                        
+                        <hr class="border-secondary">
+                        
+                        <div class="small">
+                            <p class="mb-1"><span class="text-white-50">Phương thức thanh toán:</span> <span id="display_payment" class="text-warning fw-bold">--</span></p>
+                            <p class="mb-0"><span class="text-white-50">Thời gian đặt:</span> <span id="display_time">--</span></p>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-2">
+                            <h5 class="text-warning mb-0">TỔNG TIỀN:</h5>
+                            <h3 id="display_total" class="text-warning fw-bold mb-0">0đ</h3>
+                        </div>
+                    </div>
+                    <button id="btn_confirm" class="btn btn-success w-100 py-3 fw-bold fs-5" onclick="processConfirm()">
+                        XÁC NHẬN SỬ DỤNG
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentBookingId = null;
+let isScanning = false;
+const html5QrCode = new Html5Qrcode("reader");
+
+const qrConfig = { 
+    fps: 20, 
+    qrbox: { width: 280, height: 280 }, 
+    aspectRatio: 1.0,
+    videoConstraints: {
+        width: { min: 640, ideal: 1280 },
+        height: { min: 480, ideal: 720 }
+    }
+};
+
+function playBeep() {
+    const beep = new Audio("{{ url_for('static', filename='beep.mp3') }}");
+    beep.play().catch(e => console.log("Chặn âm thanh tự động:", e));
+}
+
+async function toggleCamera() {
+    const btn = document.getElementById('btn-toggle-cam');
+    const readerDiv = document.getElementById('reader');
+    
+    if (!isScanning) {
+        try {
+            const currentState = html5QrCode.getState();
+            if (currentState !== Html5QrcodeScannerState.NOT_STARTED) {
+                await html5QrCode.stop();
+            }
+
+            const devices = await Html5Qrcode.getCameras();
+            
+            if (devices && devices.length > 0) {
+                let targetCamera = devices.find(d => 
+                    d.label.toLowerCase().includes('iriun')
+                );
+
+                if (!targetCamera) {
+                    console.warn("Không tìm thấy Iriun, đang thử camera khả dụng khác...");
+                    targetCamera = devices[0];
+                }
+
+                console.log("Đang mở camera:", targetCamera.label);
+                
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ĐANG KẾT NỐI...';
+                
+                await html5QrCode.start(
+                    targetCamera.id, 
+                    qrConfig,
+                    async (decodedText) => {
+                        playBeep();
+                        html5QrCode.pause();
+                        document.getElementById('manual_id').value = decodedText;
+                        await fetchTicket(decodedText);
+                        
+                        setTimeout(() => { 
+                            if(isScanning && html5QrCode.getState() === Html5QrcodeScannerState.PAUSED) {
+                                html5QrCode.resume(); 
+                            }
+                        }, 3000);
+                    }
+                );
+                
+                isScanning = true;
+                btn.innerHTML = '<i class="fas fa-video-slash"></i> TẮT CAMERA';
+                btn.className = "btn btn-outline-danger w-100";
+                readerDiv.style.border = "2px solid #28a745";
+            } else {
+                alert("Không tìm thấy camera nào. Hãy kiểm tra lại app Iriun trên PC!");
+            }
+        } catch (err) {
+            console.error("Lỗi Camera:", err);
+            alert("Trình duyệt chặn Camera. Hãy nhấn vào biểu tượng Camera trên thanh địa chỉ và chọn 'Allow'!");
+            btn.innerHTML = '<i class="fas fa-video"></i> THỬ LẠI';
+        }
+    } else {
+        try {
+            await html5QrCode.stop();
+            isScanning = false;
+            btn.innerHTML = '<i class="fas fa-video"></i> MỞ CAMERA QUÉT VÉ';
+            btn.className = "btn btn-outline-info w-100";
+            readerDiv.style.border = "none";
+        } catch (stopErr) {
+            isScanning = false;
+        }
+    }
+}
+
+async function fetchTicket(code) {
+    if(!code) return;
+    
+    const btnConfirm = document.getElementById('btn_confirm');
+    btnConfirm.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ĐANG KIỂM TRA...';
+    btnConfirm.disabled = true;
+
+    try {
+        const res = await fetch('/admin/get_booking_info/' + code); 
+        if (!res.ok) throw new Error('Mã vé không tồn tại');
+        
+        const data = await res.json();
+
+        if (data.status === "success") {
+            currentBookingId = code; 
+
+            document.getElementById('pos_placeholder').style.setProperty('display', 'none', 'important');
+            document.getElementById('ticket_info_card').style.display = 'block';
+
+            document.getElementById('display_id').innerText = "#" + code; 
+            document.getElementById('display_customer').innerText = data.customer_name;
+            document.getElementById('display_movie').innerText = data.movie_title;
+            document.getElementById('display_cinema_room').innerText = data.cinema + " - " + data.room;
+            document.getElementById('display_showtime').innerText = data.show_time;
+            document.getElementById('display_seats').innerText = data.seat_code;
+            document.getElementById('display_foods').innerHTML = data.food_list.length > 0 ? data.food_list.join(', ') : "Không có";
+            document.getElementById('display_time').innerText = data.created_at;
+            document.getElementById('display_total').innerText = data.total;
+            document.getElementById('display_payment').innerText = data.payment_method;
+
+            const badge = document.getElementById('badge_status');
+            badge.innerText = data.status_text.toUpperCase();
+            badge.className = 'badge ' + data.status_class;
+
+            if (data.booking_status === 'confirmed' && !data.is_past) {
+                btnConfirm.disabled = false;
+                btnConfirm.className = "btn btn-success w-100 py-3 fw-bold fs-5";
+                btnConfirm.innerHTML = '<i class="fas fa-check-double"></i> XÁC NHẬN SỬ DỤNG';
+            } else {
+                btnConfirm.disabled = true;
+                btnConfirm.className = "btn btn-outline-danger w-100 py-3 fw-bold";
+                btnConfirm.innerHTML = data.is_past ? 'VÉ ĐÃ QUÁ HẠN' : 'TRẠNG THÁI KHÔNG HỢP LỆ';
+            }
+        } else {
+            alert(data.message);
+            resetUI();
+        }
+    } catch (e) {
+        alert("Lỗi: " + e.message);
+        resetUI();
+    }
+}
+
+async function processConfirm() {
+    if (!currentBookingId) return;
+    if (!confirm("Xác nhận khách đã sử dụng vé này?")) return;
+
+    const btn = document.getElementById('btn_confirm');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ĐANG CẬP NHẬT...';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('/admin/confirm_used/' + currentBookingId, { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.status === "success") {
+            alert("THÀNH CÔNG! Vé đã được sử dụng.");
+            resetUI(); 
+        } else {
+            alert("Lỗi: " + data.message);
+            btn.disabled = false;
+        }
+    } catch (error) {
+        alert("Lỗi kết nối server!");
+    }
+}
+
+function resetUI() {
+    currentBookingId = null;
+    document.getElementById('manual_id').value = '';
+    document.getElementById('pos_placeholder').style.setProperty('display', 'flex', 'important');
+    document.getElementById('ticket_info_card').style.display = 'none';
+    
+    if (html5QrCode.getState() === Html5QrcodeScannerState.PAUSED) {
+        html5QrCode.resume();
+    }
+}
+
+document.getElementById('manual_id').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') fetchTicket(this.value);
+});
+</script>
+{% endblock %}

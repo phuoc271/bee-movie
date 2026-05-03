@@ -4,91 +4,128 @@
 
 {% block content %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
 <main>
     <div class="container">
         
         <nav class="breadcrumb">
-            <a href="{{ url_for('home') }}">Trang chủ</a> &raquo; 
-            <a href="{{ url_for('now_playing') }}">Phim</a> &raquo; 
+            <a href="{{ url_for('movie.home') }}">Trang chủ</a> &raquo; 
+            <a href="{{ url_for('movie.now_playing') }}">Phim</a> &raquo; 
             {{ movie.title }}
         </nav>
 
-        <h1>{{ movie.title }}</h1>
+        <h1 style="color: gold;">{{ movie.title }}</h1>
 
         <div class="movie-info">
-            <div class="poster" id="movie-poster">
-                {% if movie.poster_url %}
-                <img src="{{ movie.poster_url }}" alt="Poster phim {{ movie.title }}">
-                {% else %}
-                <img src="https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster" alt="Poster phim {{ movie.title }}">
-                {% endif %}
+            <div class="row">
+                <div class="col-md-6 poster" id="movie-poster" style="position: relative;"> 
+                    {% if movie.poster_url %}
+                        <img style="width: 100%; height: auto;" src="{{ movie.poster_url }}" alt="Poster phim {{ movie.title }}" class="img-fluid">
+                    {% else %}
+                        <img src="https://via.placeholder.com/300x450/333333/FFFFFF?text=No+Poster" alt="Poster phim {{ movie.title }}" class="img-fluid">
+                    {% endif %}
 
-                {% if movie.trailer_url %}
-                <button class="play-button" onclick="openTrailerModal('{{ movie.trailer_url }}')">
-                    ▶
-                </button>
-                {% endif %}
+                    <div class="vote-pill">
+                        {{ movie.vote_average if movie.vote_average else 0 }}
+                    </div>
+
+                    {% if movie.trailer_url %}
+                    <button class="play-button" onclick="openTrailerModal('{{ movie.trailer_url }}')">
+                        ▶
+                    </button>
+                    {% endif %}
                 </div>
-            
-            <div class="details">
-                <div class="rating-section mt-4 mb-4">
-                    <p>
-                        <strong>Điểm đánh giá:</strong> 
-                        <span class="text-muted fw-bold" style="color: #aaaaaa !important;">{{ movie.vote_average }}</span> / 10 
-                        <span class="text-muted"  style="color: #aaaaaa !important;"> ({{ movie.vote_count }} lượt đánh giá tổng hợp)</span>
+                
+                <div class="col-md-6 rating-section mt-4 mb-4">
+                    <div class="row align-items-center"> <div class="col-6 d-flex flex-column align-items-center">
+                            <div class="d-flex align-items-baseline mb-2">
+                                <h3 class="text-warning fw-bold mb-0 me-2" style="font-size: 2.2rem;">{{ movie.vote_average }}</h3>
+                                <span class="text-white-50">/ 10</span>
+                            </div>
+
+                            {% if current_user %}
+                                <form action="{{ url_for('movie.rate_movie', movie_id=movie_id|string) }}" method="POST" id="rating-form-final" class="text-center">
+                                    <div class="star-wrapper">
+                                        {% for i in range(10, 0, -1) %}
+                                            <input type="radio" id="rt{{ i }}" name="score" value="{{ i }}" 
+                                                {% if user_rating == i %}checked{% endif %}
+                                                onclick="this.form.submit()" />
+                                            <label for="rt{{ i }}" class="fas fa-star" title="{{ i }} sao"></label>
+                                        {% endfor %}
+                                    </div>
+                                    <p class="small text-white-50 mt-1">
+                                        {% if user_rating %} Bạn đã đánh giá: {{ user_rating }} sao {% else %} Chạm vào sao để đánh giá {% endif %}
+                                    </p>
+                                    <p class="small text-white-50">{{ movie.vote_count }} lượt đánh giá</p>
+                                </form>
+                            {% else %}
+                                <p class="text-white-50 small text-center">Vui lòng <a href="{{ url_for('auth.login') }}" class="text-warning">đăng nhập</a> để chấm điểm.</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-6 d-flex flex-column align-items-center">
+                            <div class="bee-ai-rating-container m-0">
+                                <svg class="circular-progress-svg" viewBox="0 0 140 140">
+                                    <defs>
+                                        <linearGradient id="beeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" class="start" />
+                                            <stop offset="100%" class="end" />
+                                        </linearGradient>
+                                    </defs>
+                                    <circle class="circle-bg" cx="70" cy="70" r="60"></circle>
+                                    <circle class="circle-progress" cx="70" cy="70" r="60" style="--dash-offset: calc(377 * (1 - ({{ movie.ai_score }} / 10)));"></circle>
+                                </svg>
+                                <div class="bee-logo-center">
+                                    <img src="{{ url_for('static', filename='image/logo_rating.png') }}" alt="Bee Movie AI">
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-2">
+                                <div class="d-flex justify-content-center align-items-baseline">
+                                    <span class="score-value" style="font-size: 1.5rem;">{{ movie.ai_score }}</span>
+                                    <span class="ms-1 text-white-50" style="font-size: 0.8rem;">/ 10</span>
+                                </div>
+                                <div style="color: limegreen; font-size: 0.75rem; font-weight: bold;">
+                                    SENTIMENT SCORE
+                                </div>
+                                <p class="small text-white-50">{{ movie.ai_count }} lượt phân tích</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                    <p><strong>Thời lượng :</strong> {{ movie.runtime }} phút</p>
+                    <p><strong>Thể loại :</strong> 
+                        {% if movie.genres %}
+                            {{ movie.genres | join(', ') }}
+                        {% else %}
+                            Đang cập nhật
+                        {% endif %}
+                    </p>
+                    <p><strong>Khởi chiếu :</strong> {{ movie.release_date }}</p>
+                    <p><strong>Đạo diễn :</strong> 
+                        {% if movie.director %}
+                            {{ movie.director }}
+                        {% else %}
+                            Đang cập nhật
+                        {% endif %}
+                    </p>
+                    <p><strong>Diễn viên :</strong> 
+                        {% if movie.cast and movie.cast|length > 0 %}
+                            {{ movie.cast | join(', ') }}
+                        {% else %}
+                            Đang cập nhật
+                        {% endif %}
                     </p>
 
-                    {% if current_user %}
-                        <form action="{{ url_for('rate_movie', movie_id=movie_id) }}" method="POST" id="rating-form-final">
-                            <div class="star-wrapper">
-                                {% for i in range(10, 0, -1) %}
-                                    <input type="radio" id="rt{{ i }}" name="score" value="{{ i }}" 
-                                        {% if user_rating == i %}checked{% endif %}
-                                        onclick="this.form.submit()" />
-                                    <label for="rt{{ i }}" class="fas fa-star" title="{{ i }} sao"></label>
-                                {% endfor %}
-                            </div>
-                            <p class="small text-muted mt-1"  style="color: #aaaaaa !important;">
-                                {% if user_rating %} Bạn đã đánh giá: {{ user_rating }} sao {% else %} Chạm vào sao để đánh giá {% endif %}
-                            </p>
-                        </form>
-                    {% else %}
-                        <p class="text-muted small" style="color: #aaaaaa !important;">Vui lòng&nbsp;<a href="{{ url_for('login') }}" class="text-warning">đăng nhập</a>&nbsp;để chấm điểm phim này.</p>
-                    {% endif %}
+                    <p><strong>Quốc gia :</strong> {{ movie.original_language }}</p>
+                    <p class="mt-4"><strong>Tóm tắt :</strong> 
+                        {% if movie.overview %}
+                            {{ movie.overview }}
+                        {% else %}
+                            Đang cập nhật
+                        {% endif %}
+                    </p>
                 </div>
-                <p><strong>Thời lượng :</strong> {{ movie.runtime }} phút</p>
-                <p><strong>Thể loại :</strong> 
-                    {% if movie.genres %}
-                        {{ movie.genres | join(', ') }}
-                    {% else %}
-                        Đang cập nhật
-                    {% endif %}
-                </p>
-                <p><strong>Khởi chiếu :</strong> {{ movie.release_date }}</p>
-                <p><strong>Đạo diễn :</strong> 
-                    {% if movie.director %}
-                        {{ movie.director }}
-                    {% else %}
-                        Đang cập nhật
-                    {% endif %}
-                </p>
-                <p><strong>Diễn viên :</strong> 
-                {% if movie.cast and movie.cast|length > 0 %}
-                    {{ movie.cast | join(', ') }}
-                {% else %}
-                    Đang cập nhật
-                {% endif %}
-            </p>
-
-                <p><strong>Quốc gia :</strong> {{ movie.original_language }}</p>
-                <p class="mt-4"><strong>Tóm tắt :</strong> 
-                    {% if movie.overview %}
-                        {{ movie.overview }}
-                    {% else %}
-                        Đang cập nhật
-                    {% endif %}
-                </p>
             </div>
         </div>
 
@@ -127,7 +164,7 @@
                     <div class="d-flex flex-wrap gap-2 mt-2">
                         {% for st in st_list|sort(attribute='start_time') %}
                         <div class="showtime-item text-center">
-                            <a href="{{ url_for('booking', showtime_id=st.id, movie_id=movie_id) }}" class="btn btn-sm btn-outline-warning py-1 px-3">
+                            <a href="{{ url_for('booking.booking', showtime_id=st.id, movie_id=movie_id|string) }}" class="btn btn-sm btn-outline-warning py-1 px-3">
                                 <b style="font-size: 1.3rem;">{{ st.start_time.strftime('%H:%M') }}</b>
                                 <div style="font-size: 0.8rem; opacity: 0.8;">{{ st.room.name }}</div>
                             </a>
@@ -149,116 +186,148 @@
 </div>
 
 
-        <div class="container mt-5 text-white">
-            <hr style="border-color: #444;">
-            <h3>Bình luận</h3>
+<div class="container mt-5 text-white">
+    <hr style="border-color: #444;">
+    <h3>Bình luận</h3>
 
-            {% if session.get('user_email') %}
-            <form action="{{ url_for('add_comment', movie_id=movie_id) }}" method="POST" class="mb-4">
-                <textarea name="content" class="form-control bg-dark text-white border-secondary" rows="3" placeholder="Viết bình luận của bạn..." required></textarea>
-                <button type="submit" class="btn btn-warning mt-2">Gửi bình luận</button>
-            </form>
-            {% else %}
-            <p class="text-muted" style="color: gray !important;">Vui lòng <a href="{{ url_for('login') }}" class="text-warning">đăng nhập</a> để để lại bình luận.</p>
-            {% endif %}
-
-           <div class="comment-list">
-    {% for comment in comments %}
-<div class="main-comment mb-4 border-bottom border-secondary pb-3">
-    <div class="d-flex">
-        <img src="{{ url_for('static', filename=comment.user.avatar or 'images/default-avatar.png') }}" 
-             class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+    {% if session.get('user_email') %}
+    <form action="{{ url_for('movie.add_comment', movie_id=movie_id|string) }}" method="POST" class="mb-4">
+        <input type="hidden" name="score" value="{{ user_rating or 0 }}"> 
         
-        <div class="w-100">
-            <div class="d-flex align-items-center justify-content-between">
-                <div>
-                    <span class="fw-bold text-warning">{{ comment.user.username }}</span>
-                    {% if comment.user.gender in ['Nam', 'M'] %}
-                        <i class="fa fa-mars" style="color: #0099FF; font-size: 0.8rem; font-weight: bold !important;"></i>
-                    {% elif comment.user.gender in ['Nữ', 'F'] %}
-                        <i class="fa fa-venus" style="color: #FF66CC; font-size: 0.8rem; font-weight: bold !important;"></i>
-                    {% endif %}
-                    <small class="text-muted ms-2" style="color: gray !important;">{{ comment.date_commented.strftime('%d/%m/%Y %H:%M') }}</small>
-                </div>
+        <textarea name="content" class="form-control bg-dark text-white border-secondary" rows="3" placeholder="Viết bình luận của bạn..." required></textarea>
+        <button type="submit" class="btn btn-warning mt-2">Gửi bình luận</button>
+    </form>
+    {% else %}
+    <p class="text-white-50" style="color: gray !important;">Vui lòng <a href="{{ url_for('auth.login') }}" class="text-warning">đăng nhập</a> để để lại bình luận.</p>
+    {% endif %}
 
-                {% if current_user and current_user.id == comment.user_id %}
-                <a href="{{ url_for('delete_comment', comment_id=comment.id) }}" class="text-danger small" onclick="return confirm('Xóa bình luận?')">Xóa</a>
-                {% endif %}
-            </div>
+    <div class="comment-list">
+        <div class="sentiment-filters mb-4 d-flex gap-2 flex-wrap">
+            {% set pos_count = comments | selectattr('sentiment_score', 'gt', 0.3) | list | length %}
+            {% set neg_count = comments | selectattr('sentiment_score', 'lt', -0.3) | list | length %}
+            {% set neu_count = comments | length - pos_count - neg_count %}
 
-            <p class="mt-1 mb-1 text-white">{{ comment.content }}</p>
-            
-            <div class="d-flex align-items-center">
-                <a href="javascript:void(0)" class="text-info reply small me-3" 
-                   onclick="openReplyBox('{{ comment.id }}', '{{ comment.user.id }}', '{{ comment.user.username }}')">Trả lời</a>
+            <button class="btn btn-sm btn-outline-light active" onclick="filterSentiment('all', this)">
+                Tất cả ({{ comments | length }})
+            </button>
+            <button class="btn btn-sm btn-outline-success" onclick="filterSentiment('positive', this)">
+                <i class="fas fa-smile me-1"></i> Tích cực ({{ pos_count }})
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="filterSentiment('neutral', this)">
+                <i class="fas fa-meh me-1"></i> Trung lập ({{ neu_count }})
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="filterSentiment('negative', this)">
+                <i class="fas fa-frown me-1"></i> Tiêu cực ({{ neg_count }})
+            </button>
+        </div>
+        {% for comment in comments %}
+        <div class="main-comment mb-4 border-bottom border-secondary pb-3" data-sentiment="{% if comment.sentiment_score > 0.3 %}positive{% elif comment.sentiment_score < -0.3 %}negative{% else %}neutral{% endif %}">
+            <div class="d-flex">
+                <img src="{{ url_for('static', filename=comment.user.avatar or 'images/default-avatar.png') }}" 
+                    class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
                 
-                {% if comment.replies %}
-                <a href="javascript:void(0)" class="text-secondary small" onclick="toggleReplies('replies-{{ comment.id }}', this)">
-                    <i class="fa fa-comments me-1"></i> Xem {{ comment.replies|length }} câu trả lời
-                </a>
-                {% endif %}
-            </div>
-
-            <div class="replies ms-5 mt-3" id="replies-{{ comment.id }}" style="display: none;">
-                {% for reply in comment.replies %}
-                <div class="reply-item mb-2 border-start border-secondary ps-3">
-                    <div class="d-flex align-items-start"> <img src="{{ url_for('static', filename=reply.user.avatar or 'images/default-avatar.png') }}" 
-                             class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover; border: 1px solid #444;">
-
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="d-flex align-items-center flex-wrap">
-                                    <span class="fw-bold text-warning small">{{ reply.user.username }}</span>
-                                    {% if reply.user.gender in ['Nam', 'M'] %}
-                                        <i class="fa fa-mars ms-1" style="color: #0099FF; font-size: 0.8rem; font-weight: bold !important;"></i>
-                                    {% elif reply.user.gender in ['Nữ', 'F'] %}
-                                        <i class="fa fa-venus ms-1" style="color: #FF66CC; font-size: 0.8rem; font-weight: bold !important;"></i>
-                                    {% endif %}
-
-                                    {% if reply.reply_to_user %}
-                                        <i style="color: gray !important;" class="fa fa-caret-right mx-2 text-muted"></i>
-                                        <span class="text-info text-warning small">{{ reply.reply_to_user.username }}</span>
-                                        {% if reply.reply_to_user.gender in ['Nam', 'M'] %}
-                                            <i class="fa fa-mars ms-1" style="color: #0099FF; font-size: 0.7rem; font-weight: bold !important;"></i>
-                                        {% elif reply.reply_to_user.gender in ['Nữ', 'F'] %}
-                                            <i class="fa fa-venus ms-1" style="color: #FF66CC; font-size: 0.7rem; font-weight: bold !important;"></i>
-                                        {% endif %}
-                                    {% endif %}
-                                    
-                                    <small class="text-muted ms-2" style="font-size: 0.8rem; color: gray !important;">{{ reply.date_commented.strftime('%H:%M %d/%m') }}</small>
-                                </div>
-
-                                {% if current_user and current_user.id == reply.user_id %}
-                                <a href="{{ url_for('delete_comment', comment_id=reply.id) }}" class="text-danger" style="font-size: 0.8rem;" onclick="return confirm('Xóa phản hồi?')">Xóa</a>
-                                {% endif %}
-                            </div>
-
-                            <p class="mb-1 small text-white">{{ reply.content }}</p>
+                <div class="w-100">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="fw-bold text-warning">{{ comment.user.username }}</span>
                             
-                            <a href="javascript:void(0)" class="text-info reply small" 
-                               onclick="openReplyBox('{{ comment.id }}', '{{ reply.user.id }}', '{{ reply.user.username }}')" style="font-size: 0.8rem;">Trả lời</a>
+                            {% if comment.user.gender in ['Nam', 'M'] %}
+                                <i class="fa fa-mars" style="color: #0099FF; font-size: 0.8rem; font-weight: bold !important;"></i>
+                            {% elif comment.user.gender in ['Nữ', 'F'] %}
+                                <i class="fa fa-venus" style="color: #FF66CC; font-size: 0.8rem; font-weight: bold !important;"></i>
+                            {% endif %}
+
+                            {% if comment.sentiment_score is not none %}
+                                {% if comment.sentiment_score > 0.3 %}
+                                    <i class="fas fa-smile text-success ms-1" title="Tích cực: {{ (comment.sentiment_score * 100)|round }}%"></i>
+                                {% elif comment.sentiment_score < -0.3 %}
+                                    <i class="fas fa-frown text-danger ms-1" title="Tiêu cực: {{ (comment.sentiment_score * 100)|round }}%"></i>
+                                {% else %}
+                                    <i class="fas fa-meh text-secondary ms-1" title="Trung lập"></i>
+                                {% endif %}
+                            {% endif %}
+
+                            <small class="text-white-50ms-2" style="color: gray !important;">{{ comment.date_commented.strftime('%d/%m/%Y %H:%M') }}</small>
                         </div>
+
+                        {% if current_user and current_user.id == comment.user_id %}
+                        <a href="{{ url_for('movie.delete_comment', comment_id=comment.id) }}" class="text-danger small" onclick="return confirm('Xóa bình luận?')"><i class="fa fa-trash" aria-hidden="true"></i></a>
+                        {% endif %}
+                    </div>
+
+                    <p class="mt-1 mb-1 text-white">{{ comment.content }}</p>
+                    
+                    <div class="d-flex align-items-center">
+                        <a href="javascript:void(0)" class="text-info reply small me-3" 
+                        onclick="openReplyBox('{{ comment.id }}', '{{ comment.user.id }}', '{{ comment.user.username }}')">Trả lời</a>
+                        
+                        {% if comment.replies %}
+                        <a href="javascript:void(0)" class="text-secondary small" onclick="toggleReplies('replies-{{ comment.id }}', this)">
+                            <i class="fa fa-comments me-1"></i> Xem {{ comment.replies|length }} câu trả lời
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    <div class="replies ms-5 mt-3" id="replies-{{ comment.id }}" style="display: none;">
+                        {% for reply in comment.replies %}
+                        <div class="reply-item mb-2 border-start border-secondary ps-3">
+                            <div class="d-flex align-items-start"> <img src="{{ url_for('static', filename=reply.user.avatar or 'images/default-avatar.png') }}" 
+                                    class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover; border: 1px solid #444;">
+
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center flex-wrap">
+                                            <span class="fw-bold text-warning small">{{ reply.user.username }}</span>
+                                            {% if reply.user.gender in ['Nam', 'M'] %}
+                                                <i class="fa fa-mars ms-1" style="color: #0099FF; font-size: 0.8rem; font-weight: bold !important;"></i>
+                                            {% elif reply.user.gender in ['Nữ', 'F'] %}
+                                                <i class="fa fa-venus ms-1" style="color: #FF66CC; font-size: 0.8rem; font-weight: bold !important;"></i>
+                                            {% endif %}
+
+                                            {% if reply.reply_to_user %}
+                                                <i style="color: gray !important;" class="fa fa-caret-right mx-2 text-white-50"></i>
+                                                <span class="text-info text-warning small">{{ reply.reply_to_user.username }}</span>
+                                                {% if reply.reply_to_user.gender in ['Nam', 'M'] %}
+                                                    <i class="fa fa-mars ms-1" style="color: #0099FF; font-size: 0.7rem; font-weight: bold !important;"></i>
+                                                {% elif reply.reply_to_user.gender in ['Nữ', 'F'] %}
+                                                    <i class="fa fa-venus ms-1" style="color: #FF66CC; font-size: 0.7rem; font-weight: bold !important;"></i>
+                                                {% endif %}
+                                            {% endif %}
+                                            
+                                            <small class="text-white-50ms-2" style="font-size: 0.8rem; color: gray !important;">{{ reply.date_commented.strftime('%H:%M %d/%m') }}</small>
+                                        </div>
+
+                                        {% if current_user and current_user.id == reply.user_id %}
+                                        <a href="{{ url_for('movie.delete_comment', comment_id=reply.id) }}" class="text-danger" style="font-size: 0.8rem;" onclick="return confirm('Xóa phản hồi?')"><i class="fa fa-trash" aria-hidden="true"></i></a>
+                                        {% endif %}
+                                    </div>
+
+                                    <p class="mb-1 small text-white">{{ reply.content }}</p>
+                                    
+                                    <a href="javascript:void(0)" class="text-info reply small" 
+                                    onclick="openReplyBox('{{ comment.id }}', '{{ reply.user.id }}', '{{ reply.user.username }}')" style="font-size: 0.8rem;">Trả lời</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div id="reply-form-{{ comment.id }}" style="display: none;" class="mt-2">
+                        <form action="{{ url_for('movie.add_comment', movie_id=movie_id|string) }}" method="POST">
+                            <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                            <input type="hidden" name="reply_to_id" id="reply_to_id_{{ comment.id }}">
+                            <small class="text-white-50" style="color: gray !important">Đang trả lời: <span id="reply_name_{{ comment.id }}" class="text-info"></span></small>
+                            <textarea name="content" class="form-control bg-dark text-white border-secondary mb-2" rows="2" required></textarea>
+                            <button type="submit" class="btn btn-sm btn-warning">Gửi</button>
+                            <button type="button" class="btn btn-sm btn-link text-white-50" onclick="this.parentElement.parentElement.style.display='none'">Hủy</button>
+                        </form>
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-
-            <div id="reply-form-{{ comment.id }}" style="display: none;" class="mt-2">
-                <form action="{{ url_for('add_comment', movie_id=movie_id) }}" method="POST">
-                    <input type="hidden" name="parent_id" value="{{ comment.id }}">
-                    <input type="hidden" name="reply_to_id" id="reply_to_id_{{ comment.id }}">
-                    <small class="text-muted" style="color: gray !important">Đang trả lời: <span id="reply_name_{{ comment.id }}" class="text-info"></span></small>
-                    <textarea name="content" class="form-control bg-dark text-white border-secondary mb-2" rows="2" required></textarea>
-                    <button type="submit" class="btn btn-sm btn-warning">Gửi</button>
-                    <button type="button" class="btn btn-sm btn-link text-muted" onclick="this.parentElement.parentElement.style.display='none'">Hủy</button>
-                </form>
             </div>
         </div>
+        {% endfor %}
     </div>
 </div>
-    {% endfor %}
-</div>
-    </div>
 </main>
 
 <div id="trailerModal" class="modal">
@@ -267,7 +336,7 @@
         <iframe 
             id="trailer-iframe" 
             width="100%" 
-            height="400" 
+            height="100%" 
             src="" 
             frameborder="0" 
             allow="autoplay; encrypted-media" 
@@ -282,7 +351,7 @@
         
         iframe.src = trailerUrl; 
         
-        modal.style.display = "block";
+        modal.style.display = "flex";
         
         document.body.style.overflow = 'hidden'; 
     }
@@ -320,6 +389,25 @@
             x.style.display = "none";
             btn.innerHTML = '<i class="fa fa-comments me-1"></i> Xem câu trả lời';
         }
+    }
+    function filterSentiment(type, btn) {
+        document.querySelectorAll('.sentiment-filters .btn').forEach(b => {
+            b.classList.remove('active');
+            b.classList.replace('btn-success', 'btn-outline-success');
+            b.classList.replace('btn-danger', 'btn-outline-danger');
+            b.classList.replace('btn-secondary', 'btn-outline-secondary');
+            b.classList.add('btn-outline');
+        });
+        
+        btn.classList.add('active');
+        const comments = document.querySelectorAll('.main-comment');
+        comments.forEach(comment => {
+            if (type === 'all' || comment.getAttribute('data-sentiment') === type) {
+                comment.style.display = 'block';
+            } else {
+                comment.style.display = 'none';
+            }
+        });
     }
 </script>
 {% endblock %}

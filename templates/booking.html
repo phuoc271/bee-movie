@@ -7,10 +7,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   </head>
   <body>
     <div class="header-space">{% include "header.html" %}</div>
@@ -56,6 +53,9 @@
         <p id="seatsList" style="margin: 5px 0; font-size: 15px; color: #777">
           Vui lòng chọn chỗ ngồi
         </p>
+        <p  style="margin: 5px 0; font-size: 15px; color: darkred; font-weight: bold;">
+          *Lưu ý: Vé U22 chỉ áp dụng mua tại quầy, quý khách mua trên 8 ghế vui lòng liên hệ Hotline để nhận ưu đãi 
+        </p>
       </div>
       <div
         style="text-align: right; display: flex; align-items: center; gap: 40px"
@@ -95,6 +95,10 @@
               div.innerHTML = `<i class="fa-solid fa-couch"></i><span class="seat-code-label">${code}</span>`;
               if (!occupied.includes(code)) {
                   div.onclick = () => {
+                      const isSelecting = !div.classList.contains('selected');
+                      if (isSelecting && selected.length >= 8) {
+                          return alert("Bạn chỉ được chọn tối đa 8 ghế!");
+                      }
                       div.classList.toggle('selected');
                       const index = selected.findIndex(s => s.code === code);
                       if (index > -1) selected.splice(index, 1);
@@ -119,20 +123,25 @@
 
           const totalPrice = selected.reduce((s, item) => s + item.price, 0);
 
-          fetch('/confirm_booking', {
+          fetch("{{ url_for('booking.confirm_booking') }}", {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                  showtime_id: {{ showtime_id }},
-                  movie_id: {{ movie.id }},
-                  movie_title: "{{ movie.title }}",
+                  showtime_id: "{{ showtime_id | default('') }}",
+                  movie_id: "{{ movie_id | default('') }}",
+                  movie_title: "{{ movie.title | default('Phim không tên') }}",
                   total_price: totalPrice,
                   seats: selected.map(s => s.code)
               })
           }).then(res => res.json()).then(data => {
               if (data.status === 'success') {
                   window.location.href = data.redirect;
+              } else {
+                  alert("Lỗi: " + (data.message || "Không thể đặt vé"));
               }
+          }).catch(err => {
+              console.error("Lỗi kết nối:", err);
+              alert("Đã có lỗi xảy ra khi kết nối đến máy chủ.");
           });
       }
     </script>

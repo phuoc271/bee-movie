@@ -1,9 +1,12 @@
-from .auth_controller import auth_routes 
-from .movie_controller import movie_routes
-from .booking_controller import booking_routes, register_movie_routes
+from .auth_controller import auth_bp
+from .movie_controller import movie_bp
+from .booking_controller import booking_bp
+from .admin_controller import admin_bp
+from .main_controller import main_bp
 
 def register_controllers(app):
-    auth_routes(app)
-    register_movie_routes(app)
-    movie_routes(app)
-    booking_routes(app)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(movie_bp)
+    app.register_blueprint(booking_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(main_bp)

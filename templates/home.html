@@ -44,7 +44,7 @@
                             {% endif %}
                         </p>
 
-                        <a href="/movie/{{ movie.id }}" class="btn-detail">
+                        <a href="{{ url_for('movie.movie_detail', movie_id=movie.id) }}" class="btn-detail">
                             Chi Tiết & Mua Vé
                         </a>
                     </div>
@@ -85,17 +85,19 @@
                 <img src="https://via.placeholder.com/250x350/333333/FFFFFF?text=Không+có+Poster"
                      alt="{{ movie.title }}">
                 {% endif %}
-
+                <div class="vote-pill vote-pill2">
+                    {{ movie.vote_average if movie.vote_average else 0 }}
+                </div>
                 <div class="movie-info">
                     <h3>{{ movie.title }}</h3>
                     <p>Khởi chiếu: {{ movie.release_date }}</p>
-                    <a href="/movie/{{ movie.id }}" class="btn-buy">MUA VÉ</a>
+                    <a href="{{ url_for('movie.movie_detail', movie_id=movie.id) }}" class="btn-buy">MUA VÉ</a>
                 </div>
             </div>
             {% endfor %}
         </div>
 
-        <a href="/now-playing" class="view-all">Xem tất cả</a>
+        <a href="{{ url_for('movie.now_playing') }}" class="view-all">Xem tất cả</a>
     </section>
 
     <hr style="border-top: 2px solid #333; margin: 40px 0;">
@@ -113,11 +115,13 @@
                     <img src="https://via.placeholder.com/250x350/333333/FFFFFF?text=SẮP+CHIẾU"
                          alt="{{ movie.title }}">
                     {% endif %}
-
+                    <div class="vote-pill vote-pill2">
+                        {{ movie.vote_average if movie.vote_average else 0 }}
+                    </div>
                     <div class="movie-info">
                         <h3>{{ movie.title }}</h3>
                         <p>Khởi chiếu: {{ movie.release_date }}</p>
-                        <a href="/movie/{{ movie.id }}" class="btn-buy">CHI TIẾT</a>
+                        <a href="{{ url_for('movie.movie_detail', movie_id=movie.id) }}" class="btn-buy">CHI TIẾT</a>
                     </div>
                 </div>
                 {% endfor %}
@@ -128,7 +132,7 @@
             {% endif %}
         </div>
 
-        <a href="/upcoming" class="view-all">Xem tất cả</a>
+        <a href="{{ url_for('movie.upcoming') }}" class="view-all">Xem tất cả</a>
     </section>
 
 </main>

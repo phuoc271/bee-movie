@@ -20,13 +20,37 @@
         <div class="header-top d-flex justify-content-between align-items-center">
             <nav class="main-nav1">
                 <ul>
-                    <li><a href="/about">Giới thiệu</a></li>
-                    <li><a href="/recruitment">Tuyển dụng</a></li>
-                    <li><a href="/faqs">FAQS</a></li>
+                    <li><a href="{{ url_for('booking.about') }}">Giới thiệu</a></li>
+                    <li><a href="{{ url_for('booking.recruitment') }}">Tuyển dụng</a></li>
+                    <li><a href="{{ url_for('booking.faqs') }}">FAQS</a></li>
                 </ul>
             </nav>
 
             <div class="user-actions">
+                <a href="{{ url_for('booking.view_cart') }}" style="text-decoration: none; position: relative; display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px;">
+                    <i class="fa fa-shopping-cart" aria-hidden="true" 
+                    style="font-size: 24px; color: #ffc107; transition: 0.3s;">
+                    </i>
+
+                    {% if cart_count > 0 %}
+                    <span style="position: absolute; 
+                                top: 5px; 
+                                right: 5px; 
+                                background-color: #ffc107; 
+                                color: black; 
+                                font-size: 11px; 
+                                font-weight: bold; 
+                                width: 18px; 
+                                height: 18px; 
+                                border-radius: 50%; 
+                                display: flex; 
+                                align-items: center; 
+                                justify-content: center;
+                                border: 1px solid #000;">
+                        {{ cart_count }}
+                    </span>
+                    {% endif %}
+                </a>
                 {% if session.username %}
                 <div class="dropdown">
                     <button class="btn btn-header-user dropdown-toggle d-flex align-items-center"
@@ -52,18 +76,18 @@
                     </button>
 
                     <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/profile">Hồ sơ</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">Hồ sơ</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/my-tickets">Vé của tôi</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('booking.my_tickets') }}">Vé của tôi</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/change_password">Đổi mật khẩu</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}">Đổi mật khẩu</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="/logout">Đăng xuất</a></li>
+                        <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Đăng xuất</a></li>
                     </ul>
                 </div>
                 {% else %}
-                <div><a href="/register" class="btn-primary">Đăng Ký</a></div>
-                <div class="user-actions1"><a href="/login" class="btn-secondary">Đăng Nhập</a></div>
+                <div><a href="{{ url_for('auth.register') }}" class="btn-primary">Đăng Ký</a></div>
+                <div class="user-actions1"><a href="{{ url_for('auth.login') }}" class="btn-secondary">Đăng Nhập</a></div>
                 {% endif %}
             </div>
         </div>
@@ -71,15 +95,28 @@
         <div class="header-bottom">
             <nav class="main-nav">
                 <ul>
-                    <li><a href="/lich-chieu" class="active-nav">LỊCH CHIẾU</a></li>
+                    <li><a href="{{ url_for('booking.all_showtimes') }}" class="active-nav">LỊCH CHIẾU</a></li>
                     <li class="nav-item-dropdown">
                         <a href="/">PHIM</a>
                         <ul class="dropdown-menu-custom">
-                            <li><a href="/now-playing">PHIM ĐANG CHIẾU</a></li>
-                            <li><a href="/upcoming">PHIM SẮP CHIẾU</a></li>
+                            <li><a href="{{ url_for('movie.now_playing') }}">PHIM ĐANG CHIẾU</a></li>
+                            <li><a href="{{ url_for('movie.upcoming') }}">PHIM SẮP CHIẾU</a></li>
                         </ul>
                     </li>
-                    <li><a href="/cinemas">RẠP & GIÁ VÉ</a></li>
+                    <li><a href="{{ url_for('movie.cinemas') }}">RẠP & GIÁ VÉ</a></li>
+                    <li><a href="{{ url_for('booking.concessions') }}">BEEMOVIE SHOP</a></li>
+                    {% if session.username and session.role == 'admin' %}
+                        <li>
+                            <a href="{{ url_for('admin.admin_dashboard') }}">
+                                <i class="fas fa-user-shield"></i> Trang admin
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('admin.pos_checkin') }}">
+                                <i class="fa fa-television" aria-hidden="true"></i> MÔ PHỎNG POS CHECK-IN
+                            </a>
+                        </li>
+                    {% endif %}
                 </ul>
             </nav>
         </div>

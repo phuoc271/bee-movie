@@ -75,6 +75,9 @@
                 card.innerHTML = `
                     <img src="${imgSrc}" alt="${m.title}" 
                          onerror="this.onerror=null;this.src='https://via.placeholder.com/250x350/333333/FFFFFF?text=Không+có+Poster'">
+                    <div class="vote-pill vote-pill2">
+                        ${m.vote_average || 0}
+                    </div>
                     <div class="movie-info">
                         <h3>${m.title}</h3>
                         <p>${m.genre || ''}</p>
@@ -88,11 +91,12 @@
 
         function openModal(movie) {
             const imgSrc = movie.img || movie.poster_url || "https://via.placeholder.com/600x350/333333/FFFFFF?text=Không+có+Poster";
+            const baseUrl = "{{ url_for('movie.movie_detail', movie_id=0) }}".replace('0', movie.id);
             modalImage.src = imgSrc;
-            modalTitle.textContent = movie.title;
+            modalTitle.innerHTML = `${movie.title} <span>${movie.vote_average || 0}</span>`;
             modalGenre.textContent = "Thể loại: " + (movie.genre || "");
             modalDesc.textContent = movie.desc || "";
-            modalBuyTicket.href = `/movie/${movie.id}`;
+            modalBuyTicket.href = baseUrl;
             modal.style.display = "flex";
         }
 

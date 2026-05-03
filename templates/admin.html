@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bee Movie - Hệ thống quản trị</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+    <style>
+        :root { --bee-yellow: #ffc107; --bee-black: #000000; --bee-gray: #1a1a1a; }
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Sidebar */
+        .sidebar { height: 100vh; background: var(--bee-black); border-right: 2px solid var(--bee-yellow); position: fixed; width: 260px; transition: all 0.3s; z-index: 1000; }
+        .nav-link { color: #888 !important; padding: 12px 20px; border-radius: 5px; margin: 5px 10px; transition: 0.3s; border: none; background: none; width: calc(100% - 20px); text-align: left; }
+        .nav-link:hover { background: #222; color: var(--bee-yellow); }
+        .nav-link.active { background: var(--bee-yellow) !important; color: #000 !important; font-weight: bold; }
+
+        /* Main Content */
+        .main-content { margin-left: 260px; padding: 30px; }
+        .card-stats { background: var(--bee-gray); border: 1px solid #333; border-radius: 15px; padding: 20px; transition: 0.3s; }
+        .card-stats:hover { border-color: var(--bee-yellow); transform: translateY(-5px); }
+        
+        /* Table Custom */
+        .table-dark { background-color: var(--bee-gray); border-radius: 10px; overflow: hidden; }
+        .table-dark thead { background-color: #000; color: var(--bee-yellow); }
+        
+        /* Badge & Status */
+        .status-confirmed { color: #28a745; font-weight: bold; }
+        .status-pending { color: var(--bee-yellow); font-weight: bold; }
+        .high-price-icon { color: #ff4d4d; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--bee-yellow); }
+    </style>
+</head>
+<body>
+<iframe name="hidden_frame" id="hidden_frame" style="display:none;"></iframe>
+<div class="header-space lg-12" style="height: auto !important;">{% include "header.html" %}</div>
+<div class="sidebar d-flex flex-column p-3 ">
+    <div class="text-center mb-4">
+        <h3 class="text-warning fw-bold"><i class="fas fa-bee"></i> BEE ADMIN</h3>
+        <small class="text-white text-uppercase">Hệ thống quản lý rạp</small>
+    </div>
+    <hr class="text-secondary">
+    <ul class="nav nav-pills flex-column mb-auto" id="adminTab" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-dash">
+                <i class="fas fa-chart-pie me-2"></i> Báo cáo tổng quan
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-show">
+                <i class="fas fa-clock me-2"></i> Lịch chiếu & Phòng
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-book">
+                <i class="fas fa-ticket-alt me-2"></i> Quản lý Đặt vé
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-food">
+                <i class="fa-solid fa-glass-water"></i> Đồ ăn & Nước uống
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-com">
+                <i class="fas fa-comments me-2"></i> Bình luận & Rate
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-auto-gen">
+                <i class="fas fa-magic me-2"></i> Tạo suất chiếu thủ công (Auto)
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-auto-gen2">
+                <i class="fas fa-edit me-2"></i> Tạo ,sửa thông tin phim
+            </button>
+        </li>
+    </ul>
+</div>
+
+<div class="main-content">
+    <div class="tab-content" id="adminTabContent">
+        
+        <div class="tab-pane fade show active" id="tab-dash">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-warning mb-0">Báo cáo tài chính</h2>
+
+                <form method="GET" action="{{ url_for('admin.admin_dashboard') }}" id="filterForm" class="d-flex gap-3 align-items-center">
+                    
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-white-50 small">Chọn ngày:</span>
+                        <input type="date" name="filter_date" 
+                            class="form-control form-control-sm bg-dark text-white border-secondary" 
+                            value="{{ request.args.get('filter_date', '') }}" 
+                            onchange="this.form.submit()">
+                    </div>
+
+                    <div class="input-group input-group-sm" style="width: 250px;">
+                        <span class="text-white-50 small">Chọn khoảng ngày:</span>
+                        <input type="text" name="date_range" id="date_range" 
+                            class="form-control bg-dark text-white border-secondary" 
+                            placeholder="Chọn khoảng ngày..." 
+                            value="{{ request.args.get('date_range', '') }}">
+                        <span class="input-group-text bg-dark border-secondary text-warning">
+                            <i class="fas fa-calendar-alt"></i>
+                        </span>
+                    </div>
+
+                    <div class="btn-group border border-secondary rounded">
+                        <a href="{{ url_for('admin.admin_dashboard', period='day') }}" 
+                        class="btn btn-sm {{ 'btn-warning' if period=='day' else 'btn-dark' }}">Hôm nay</a>
+                        <a href="{{ url_for('admin.admin_dashboard', period='week') }}" 
+                        class="btn btn-sm {{ 'btn-warning' if period=='week' else 'btn-dark' }}">Tuần</a>
+                        <a href="{{ url_for('admin.admin_dashboard', period='month') }}" 
+                        class="btn btn-sm {{ 'btn-warning' if period=='month' else 'btn-dark' }}">Tháng</a>
+                        <a href="{{ url_for('admin.admin_dashboard', period='all') }}" 
+                        class="btn btn-sm {{ 'btn-warning' if period=='all' else 'btn-dark' }}">Tất cả</a>
+                    </div>
+
+                    {% if request.args.get('filter_date') or request.args.get('date_range') or period != 'all' %}
+                        <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-sync-alt"></i> Reset
+                        </a>
+                    {% endif %}
+                </form>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="card-stats border-start border-success border-4">
+                        <p class="text-white-50 mb-1 small">Doanh thu thực tế (Đã chiếu/Đã nhận)</p> <h2 class="fw-bold text-success">{{ "{:,.0f}".format(revenue) }} <small>đ</small></h2>
+                        <i class="fas fa-check-circle float-end fs-1 opacity-25" style="margin-top: -40px;"></i>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card-stats border-start border-info border-4">
+                        <p class="text-white-50 mb-1 small">Doanh thu dự kiến (Đang treo)</p>
+                        <h2 class="fw-bold text-info">{{ "{:,.0f}".format(pending) }} <small>đ</small></h2>
+                        <i class="fas fa-clock float-end fs-1 opacity-25" style="margin-top: -40px;"></i>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card-stats border-start border-danger border-4">
+                        <p class="text-white-50 mb-1 small">Tổng tiền vé đã hủy</p>
+                        <h2 class="fw-bold text-danger">{{ "{:,.0f}".format(cancelled_revenue) }} <small>đ</small></h2>
+                        <i class="fas fa-times-circle float-end fs-1 opacity-25" style="margin-top: -40px;"></i>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card-stats border-start border-warning border-4">
+                        <p class="text-white-50 mb-1 small">Vé đã bán</p>
+                        <h2 class="fw-bold text-warning">{{ tickets }} <small>Vé</small></h2>
+                        <i class="fas fa-ticket-alt float-end fs-1 opacity-25" style="margin-top: -40px;"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-5">
+                <div class="col-md-7">
+                    <h4 class="text-white-50 mb-3"><i class="fas fa-exchange-alt me-2"></i>Dòng tiền giao dịch gần đây</h4>
+                    <div class="card-stats p-0">
+                        <table class="table table-dark table-hover mb-0 small">
+                            <thead>
+                                <tr class="text-white-50">
+                                    <th>Thời gian</th>
+                                    <th>Khách hàng</th>
+                                    <th>Loại</th>
+                                    <th class="text-end">Số tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cf in cash_flow %}
+                                <tr>
+                                    <td>{{ cf.booking_time.strftime('%H:%M %d/%m') }}</td>
+                                    <td>{{ cf.user.username if cf.user else "Khách vãng lai" }}</td>
+                                    <td>
+                                        <span class="badge {{ cf.badge_class }}" style="font-size: 0.6rem;">
+                                            {{ cf.display_type }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end {{ cf.amt_color }} fw-bold">
+                                        {% if cf.status == 'cancelled' %}{% else %}+{% endif %}{{ "{:,.0f}".format(cf.total_amt) }}đ
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="col-md-5">
+                    <h4 class="text-white-50 mb-3"><i class="fas fa-star me-2"></i>Top phim đánh giá</h4>
+                    <div class="card-stats p-0">
+                        <table class="table table-dark mb-0">
+                            <tbody>
+                                {% for m in top_movies %}
+                                <tr>
+                                    <td class="movie-name py-3" data-id="{{ m.movie_id }}">Phim #{{ m.movie_id }}</td>
+                                    <td class="text-end"><span class="text-warning fw-bold">{{ "%.1f"|format(m.avg_score) }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <div class="tab-pane fade" id="tab-show">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="text-warning">Quản lý Lịch chiếu</h2>
+            <div class="d-flex gap-2">
+                <select id="cinemaFilter" class="form-select bg-dark text-warning border-warning" style="width: 250px;" onchange="filterCinema()">
+                    <option value="all">--- Tất cả Rạp ---</option>
+                    {% for cinema in cinemas %}
+                        <option value="cinema-{{ cinema.id }}">{{ cinema.name }}</option>
+                    {% endfor %}
+                </select>
+                
+                <button class="btn btn-warning fw-bold" data-bs-toggle="modal" data-bs-target="#addShowtimeModal">
+                    <i class="fas fa-plus-circle me-1"></i> Tạo suất chiếu mới
+                </button>
+            </div>
+        </div>
+
+        <div id="cinemaContainer">
+            {% for cinema in cinemas %}
+            <div class="cinema-section mb-5" id="cinema-{{ cinema.id }}">
+                <h3 class="text-warning bg-black p-2 border-start border-4 border-warning">
+                    <i class="fas fa-map-marker-alt me-2"></i>{{ cinema.name }}
+                </h3>
+                
+                {% for room in cinema.rooms %}
+                <div class="card-stats mb-3 ms-3">
+                    <h5 class="text-white-50 border-bottom pb-2">
+                        <i class="fas fa-door-open me-2"></i>{{ room.name }} ({{ room.capacity }} ghế)
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Ngày chiếu</th>
+                                    <th>Giờ</th>
+                                    <th>Tên phim</th>
+                                    <th>Giá vé</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in room.showtimes %}
+                                    {% if s.start_time >= now %}
+                                    <tr id="row-{{ s.id }}"> 
+                                        <td>{{ s.start_time.strftime('%d/%m/%Y') }}</td>
+                                        <td><span class="badge bg-warning text-dark">{{ s.start_time.strftime('%H:%M') }}</span></td>
+                                        
+                                        <td class="movie-name" data-id="{{ s.movie_id }}">{{ s.movie_id }}</td>
+
+                                        <td class="price-cell">{{ "{:,.0f}".format(s.price) }}đ</td>
+
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-sm btn-outline-info" 
+                                                        onclick="editShowtime('{{ s.id }}', '{{ s.room.cinema_id }}', '{{ s.movie_id }}', '{{ s.room_id }}', '{{ s.start_time.strftime('%Y-%m-%dT%H:%M') }}', '{{ s.price }}')">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                
+                                                <form action="{{ url_for('admin.delete_showtime', id=s.id) }}" 
+                                                    method="POST" 
+                                                    target="hidden_frame" 
+                                                    onsubmit="if(confirm('Bạn có chắc chắn muốn xóa suất chiếu này?')) { this.closest('tr').style.display='none'; return true; } return false;">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+        <div class="modal fade" id="addShowtimeModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content bg-dark border-warning text-white">
+                    <form id="showtimeForm" action="{{ url_for('admin.add_showtime') }}" method="POST">
+                        <input type="hidden" name="showtime_id" id="edit_showtime_id">
+                        <div class="modal-header border-secondary">
+                            <h5 class="modal-title text-warning" id="modalTitle">Thiết lập suất chiếu</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3 position-relative">
+                                <label class="form-label text-warning fw-bold">
+                                    <i class="fas fa-search me-1"></i> Tìm phim từ TMDB
+                                </label>
+                                
+                                <div class="input-group shadow-sm">
+                                    <input type="text" id="movieSearchInput" class="form-control bg-dark text-white border-warning" placeholder="Nhập tên phim từ TMDB...">
+                                    <button class="btn btn-warning" type="button" id="btnSearchMovie"><i class="fas fa-search"></i></button>
+                                </div>
+                                
+                                <div id="searchResultList" class="list-group position-absolute w-100 mt-1 shadow-lg" style="z-index: 1050; display: none; max-height: 250px; overflow-y: auto;"></div>
+                            </div>
+                            <div class="mb-3 position-relative">
+                                <label class="form-label text-success fw-bold">
+                                    <i class="fas fa-database me-1"></i> Tìm phim nội bộ (MovieExtra)
+                                </label>
+                                <div class="input-group shadow-sm">
+                                    <input type="text" id="modalInternalSearchInput" 
+                                        class="form-control bg-dark text-white border-success" 
+                                        placeholder="Nhập tên phim đã có trong hệ thống..."
+                                        oninput="searchModalInternal()">
+                                    <button class="btn btn-success" type="button" onclick="searchModalInternal()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                                <div id="modalInternalResultList" 
+                                    class="list-group position-absolute w-100 mt-1 shadow-lg" 
+                                    style="z-index: 1051; display: none; max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                            <div id="extraFields" style="display: none;">
+                                <hr class="text-secondary">
+                                
+                                <div id="selectedMovieInfo" class="card bg-black border-secondary mb-3">
+                                    <div class="row g-0">
+                                        <div class="col-4">
+                                            <img id="moviePoster" src="" class="img-fluid rounded-start" style="height: 150px; object-fit: cover;">
+                                        </div>
+                                        <div class="col-8">
+                                            <div class="card-body p-2">
+                                                <h6 id="movieTitle" class="card-title text-warning mb-1"></h6>
+                                                <p class="text-white small mb-1">ID: <span id="movieIDDisplay" class="text-white"></span></p>
+                                                <p class="text-white small mb-1">Thời lượng: <span id="movieRuntime" class="text-white"></span></p>
+                                                <p id="movieOverview" class="card-text small text-truncate-3" style="font-size: 11px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; color: grey;"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" name="movie_id" id="edit_movie_id">
+                                <div class="mb-3">
+                                    <label class="text-warning fw-bold mb-2">Chọn Rạp</label>
+                                    <select name="cinema_id" id="edit_cinema_id" class="form-select bg-dark text-white border-secondary">
+                                        <option value="">--- Chọn Rạp ---</option>
+                                        {% for cinema in cinemas %}
+                                        <option value="{{ cinema.id }}">{{ cinema.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="text-warning fw-bold mb-2">Chọn Phòng</label>
+                                    <select name="room_id" id="edit_room_id" class="form-select bg-dark text-white border-secondary" required>
+                                        <option value="">--- Vui lòng chọn rạp trước ---</option>
+                                    </select>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Ngày & Giờ</label>
+                                        <input type="datetime-local" id="edit_start_time" name="start_time" class="form-control bg-dark text-white border-secondary" lang="en-GB" step="60">                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Giá vé gốc</label>
+                                        <input type="number" name="price" id="edit_price" class="form-control bg-dark text-white border-secondary">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-secondary">
+                            <button type="button" id="btnSubmit" class="btn btn-warning">
+                                Xác nhận
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-book">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-warning">Quản lý Đặt vé & Dịch vụ</h2>
+                
+                <form class="d-flex gap-2 align-items-end" method="GET" action="{{ url_for('admin.admin_dashboard') }}">
+                    <div>
+                        <select name="cinema_id" class="form-select form-select-sm bg-dark text-white border-secondary">
+                            <option value="">Tất cả rạp</option>
+                            {% for c in cinemas %}
+                            <option value="{{ c.id }}" {% if request.args.get('cinema_id')|int == c.id %}selected{% endif %}>
+                                {{ c.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <input type="date" name="filter_date" value="{{ request.args.get('filter_date', '') }}" 
+                            class="form-control form-control-sm bg-dark text-white border-secondary">
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-warning">LỌC</button>
+                    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-sm btn-outline-secondary">XÓA LỌC</a>
+                </form>
+            </div>
+            <div class="card-stats p-0 overflow-hidden">
+                <table class="table table-dark table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Khách hàng</th>
+                            <th>Ngày đặt</th> 
+                            <th>Phim</th> 
+                            <th>Suất chiếu & Rạp</th> 
+                            <th>Ghế</th>
+                            <th>Bắp & Nước</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in bookings %}
+                        <tr class="booking-item" data-cinema-id="cinema-{{ b.show_info.cinema_id }}">
+                            <td>#{{ b.id }}</td>
+                            <td><strong>{{ b.user.username if b.user else "Ẩn danh" }}</strong></td>
+                            <td class="small">{{ b.booking_date }}</td> 
+                            <td><div class="text-info" style="font-weight: bold;">{{ b.movie_title }}</div></td>
+                            <td>
+                                <div class="text-white">{{ b.show_info.time }}</div>
+                                <small class="text-white-50">{{ b.show_info.cinema }} {{ b.show_info.room }}</small>
+                            </td>
+                            <td><span class="badge border border-warning text-warning">{{ b.seat_code }}</span></td>
+                            <td>
+                                {% if b.concession_items %}
+                                    <ul class="list-unstyled mb-0" style="font-size: 0.8rem;">
+                                        {% for item in b.concession_items %}
+                                        <li>{{ item.concession.name }} (x{{ item.quantity }})</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="small text-white-50">Không kèm dịch vụ</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {{ b.status_class }}">
+                                    {{ b.status_text }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {% if b.status == 'confirmed' %}
+                                    {% if (b.seat_code != "ONLY_FOOD" and not b.show_info.is_past) or (b.seat_code == "ONLY_FOOD" and not b.is_food_expired) %}
+                                        <form action="{{ url_for('admin.cancel_booking') }}" 
+                                            method="POST" 
+                                            onsubmit="handleCancelSubmit(this, '{{ b.id }}'); return false;">
+                                            
+                                            <input type="hidden" name="booking_id" value="{{ b.id }}">
+                                            
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                HỦY VÉ
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted small">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-food">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-warning m-0">Menu Concessions</h2>
+        <button class="btn btn-warning btn-sm" onclick="openConcessionModal()">
+            <i class="fas fa-plus"></i> Thêm món mới
+        </button>
+    </div>
+
+    <div class="row g-4">
+            {% for item in concessions %}
+            <div class="col-md-3">
+                <div class="card-stats text-center h-100 p-3 shadow-sm" style="border: 1px solid #444;">
+                    <img src="{{ url_for('static', filename=item.img) if item.img else url_for('static', filename='images/no-food.png') }}" 
+                        class="img-fluid rounded mb-3" style="height: 350px !important; width: 100%; object-fit: cover;">
+                    <h6>{{ item.name }}</h6>
+                    <p class="text-warning fw-bold">{{ "{:,.0f}".format(item.price) }}đ</p>
+                    
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-secondary w-100" 
+                                onclick="openConcessionModal('{{ item.id }}', '{{ item.name }}', '{{ item.price }}', '{{ item.img }}', '{{ item.description }}', '{{ item.category }}')">
+                            Sửa
+                        </button>
+                        <a href="{{ url_for('admin.delete_concession', id=item.id) }}" 
+                        class="btn btn-sm btn-outline-danger" 
+                        onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="modal fade" id="concessionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark text-white border-secondary">
+                <form action="{{ url_for('admin.save_concession') }}" method="POST">
+                    <div class="modal-header border-secondary">
+                        <h5 class="modal-title" id="modalTitle">Sửa sản phẩm</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="id" id="form_id">
+                        <div class="mb-3">
+                            <label class="small text-secondary">Tên món</label>
+                            <input type="text" name="name" id="form_name" class="form-control bg-dark text-white border-secondary" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="small text-secondary">Giá (VNĐ)</label>
+                                <input type="number" name="price" id="form_price" class="form-control bg-dark text-white border-secondary" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="small text-secondary">Loại sản phẩm</label>
+                                <select name="category" id="form_cat" class="form-select bg-dark text-white border-secondary">
+                                    <option value="combo">Combo</option>
+                                    <option value="single">Đơn lẻ</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="small text-secondary">Đường dẫn ảnh (trong static/)</label>
+                            <input type="text" name="img" id="form_img" class="form-control bg-dark text-white border-secondary" placeholder="ví dụ: images/popcorn.png">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small text-secondary">Mô tả ngắn</label>
+                            <textarea name="description" id="form_desc" class="form-control bg-dark text-white border-secondary" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-secondary">
+                        <button type="submit" class="btn btn-warning w-100">Lưu thông tin</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+        <div class="tab-pane fade" id="tab-com">
+            <h2 class="text-warning mb-4">Quản lý Bình luận</h2>
+            {% for c in comments %}
+            <div class="card-stats mb-3">
+                <div class="d-flex justify-content-between">
+                    <strong class="text-warning">@{{ c.user.username }}</strong>
+                    <small >{{ c.date_commented.strftime('%H:%M %d/%m/%Y') }}</small>
+                </div>
+                <p class="mt-2 mb-0">{{ c.content }}</p>
+                <div class="text-end">
+                    <button class="btn btn-sm text-danger"><i class="fas fa-trash"></i> Xóa</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="tab-pane fade" id="tab-auto-gen">
+            <div class="card bg-dark text-white border-secondary shadow">
+                <div class="card mb-4 bg-dark border-info">
+                            <div class="card-body d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-info mb-1">Chế độ vận hành hệ thống tạo suất chiếu tự động</h6>
+                                    <p class="small  mb-0" style="color: grey;">Tắt để tự xếp lịch thủ công, bật để Bot tự lấp đầy 7 ngày.</p>
+                                </div>
+                                <div class="form-check form-switch scale-150">
+                                    <input class="form-check-input" type="checkbox" id="autoSeedToggle" 
+                                        onchange="handleToggleAuto(this)" style="cursor: pointer; width: 50px; height: 25px;"
+                                        {% if is_auto_active %}checked{% endif %}>
+                                </div>
+                            </div>
+                </div>
+                <div class="card-header border-secondary bg-dark">
+                    <h5 class="mb-0 text-warning"><i class="fas fa-robot me-2"></i> Công cụ Quản lý Suất chiếu Nhanh</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8 border-end border-secondary">
+                            <h6 class="mb-3 text-info">1. Thiết lập 5 Phim Hot & Ngày chiếu</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="small mb-1">Chọn Rạp</label>
+                                    <select id="manual_auto_cinema_id" class="form-select bg-secondary text-white border-0">
+                                        {% for cinema in cinemas %}
+                                            <option value="{{ cinema.id }}">{{ cinema.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small mb-1">Ngày áp dụng</label>
+                                    <input type="date" id="manual_auto_date" class="form-control bg-secondary text-white border-0">
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="small mb-2 text-warning">Nhập tên 5 phim hot (Phòng 1-5 mỗi phòng 1 phim, 6-7 trộn đều):</label>
+                                    <div class="row g-2" id="hot_movie_selectors">
+                                        {% for i in range(1, 6) %}
+                                        <div class="col-md-2-4 position-relative" style="width: 20%;">
+                                            <input type="text" class="form-control bg-secondary text-white border-0 movie-search-input" 
+                                                placeholder="Tên phim {{i}}..." data-index="{{i}}">
+                                            <input type="hidden" class="hot-movie-id-storage">
+                                            <div class="list-group position-absolute w-100 shadow-lg search-results-dropdown" 
+                                                style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12 mt-4">
+                                    <button onclick="executeManualAutoSeed(this)" class="btn btn-warning w-100 fw-bold">
+                                        <i class="fas fa-play-circle me-1"></i> TẠO LỊCH THEO 5 PHIM TRÊN
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 ps-4">
+                            <h6 class="mb-3 text-danger">2. Xóa lịch nhanh</h6>
+                            <p class="small " style="color: grey;">Chọn rạp và ngày để xóa sạch suất chiếu.</p>
+                            <p class="small text-danger">*Lưu ý: Tắt chế độ vận hành hệ thống tạo suất chiếu tự động trước khi xóa!</p>
+                            <div class="mb-2">
+                                <label class="small mb-1">Chọn Rạp cần xóa</label>
+                                <select id="delete_cinema_id" class="form-select bg-dark text-white border-secondary">
+                                    {% for cinema in cinemas %}
+                                        <option value="{{ cinema.id }}">{{ cinema.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="small mb-1">Ngày cần xóa</label>
+                                <input type="date" id="delete_date" class="form-control bg-dark text-white border-secondary">
+                            </div>
+
+                            <button onclick="deleteScheduleByDay()" class="btn btn-outline-danger w-100 mt-2">
+                                <i class="fas fa-trash-alt me-1"></i> XÓA HẾT SUẤT CHIẾU
+                            </button>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            <div class="card bg-dark text-white border-secondary shadow mt-4">
+                <div class="card-header border-secondary bg-dark">
+                    <h5 class="mb-0 text-warning">
+                        <i class="fas fa-plus-circle me-2"></i> Tạo từng suất chiếu thủ công
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6 border-end border-secondary">
+                            <h6 class="text-info mb-3">1. Chọn phim nguồn</h6>
+
+                            <label class="small text-white-50 mb-1">Tìm phim mới (TMDB)</label>
+                            <div class="input-group mb-2">
+                                <input type="text" id="manual_movie_search" 
+                                    class="form-control bg-secondary text-white border-0"
+                                    placeholder="Nhập tên phim...">
+                                <button class="btn btn-info" type="button" id="manual_movie_search_btn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+
+                            <label class="small text-white-50 mb-1">Tìm phim nội bộ (MovieExtra)</label>
+                            <div class="input-group mb-2">
+                                <input type="text" id="manual_movie_search_extra" 
+                                    class="form-control bg-secondary text-white border-0 small"
+                                    placeholder="Nhập tên phim đã có trong hệ thống...">
+                                <button class="btn btn-success" type="button" onclick="doManualMovieSearch('extra')">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            
+                            <div id="manual_movie_results" 
+                                class="list-group position-relative shadow-lg mb-3"
+                                style="display:none; max-height:220px; overflow-y:auto; z-index:100;"></div>
+                            
+
+                            <div id="manual_selected_movie_card" 
+                                class="card bg-black border-warning mb-3" 
+                                style="display:none;">
+                                <div class="row g-0">
+                                    <div class="col-3">
+                                        <img id="manual_movie_poster" src="" 
+                                            class="img-fluid rounded-start" 
+                                            style="height:120px; object-fit:cover;">
+                                    </div>
+                                    <div class="col-9">
+                                        <div class="card-body p-2">
+                                            <h6 id="manual_movie_title_display" class="text-warning mb-1 small fw-bold"></h6>
+                                            <p class="mb-1" style="font-size:11px; color:#aaa;">
+                                                ID: <span id="manual_movie_id_display" class="text-white font-monospace"></span>
+                                            </p>
+                                            <p class="mb-0" style="font-size:11px; color:#aaa;">
+                                                Thời lượng: <span id="manual_movie_runtime_display" class="text-white"></span>
+                                            </p>
+                                            <button onclick="clearManualMovie()" 
+                                                    class="btn btn-sm btn-outline-danger mt-1 py-0 px-2" 
+                                                    style="font-size:11px;">
+                                                <i class="fas fa-times"></i> Đổi phim
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <input type="hidden" id="manual_movie_id_val">
+                        </div>
+
+                        <div class="col-md-6 ps-md-4">
+                            <h6 class="text-info mb-3">2. Thiết lập suất chiếu</h6>
+
+                            <div class="mb-3">
+                                <label class="small text-white-50 mb-1">Chọn Rạp</label>
+                                <select id="manual_cinema_id" 
+                                        class="form-select bg-secondary text-white border-0"
+                                        onchange="loadManualRooms()">
+                                    <option value="">--- Chọn rạp ---</option>
+                                    {% for cinema in cinemas %}
+                                    <option value="{{ cinema.id }}">{{ cinema.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small text-white-50 mb-1">Chọn Phòng chiếu</label>
+                                <select id="manual_room_id" class="form-select bg-secondary text-white border-0">
+                                    <option value="">--- Chọn rạp trước ---</option>
+                                </select>
+                            </div>
+
+                            <div class="row g-2 mb-3">
+                                <div class="col-7">
+                                    <label class="small text-white-50 mb-1">Ngày &amp; Giờ chiếu</label>
+                                    <input type="datetime-local" id="manual_start_time" 
+                                        class="form-control bg-secondary text-white border-0" step="60">
+                                </div>
+                                <div class="col-5">
+                                    <label class="small text-white-50 mb-1">Giá vé gốc (đ)</label>
+                                    <input type="number" id="manual_price" 
+                                        class="form-control bg-secondary text-white border-0"
+                                        placeholder="85000" min="0" step="1000">
+                                </div>
+                            </div>
+
+                            <div id="manual_preview_box" 
+                                class="alert alert-dark border border-secondary small py-2 px-3 mb-3" 
+                                style="display:none; font-size:12px; color:#aaa; line-height:1.8;">
+                                <strong class="text-warning d-block mb-1">Xem lại trước khi tạo:</strong>
+                                <span>🎬 <span id="prev_s_movie">-</span></span><br>
+                                <span>🏢 <span id="prev_s_cinema">-</span> · <span id="prev_s_room">-</span></span><br>
+                                <span>🕐 <span id="prev_s_time">-</span></span><br>
+                                <span>💰 <span id="prev_s_price" class="text-warning fw-bold">-</span></span>
+                            </div>
+
+                            <button onclick="submitManualShowtime(this)" class="btn btn-warning w-100 fw-bold">
+                                <i class="fas fa-plus-circle me-1"></i> TẠO SUẤT CHIẾU
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-auto-gen2">
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="card bg-dark text-white border-secondary">
+                        <div class="card-body">
+                            <h6 class="card-title text-info"><i class="fas fa-search me-2"></i>Tìm thông tin phim trên TMDB</h6>
+                            <div class="input-group mb-3">
+                                <input type="text" 
+                                    id="tmdb-search-input-extra" 
+                                    class="form-control bg-secondary text-white border-0" 
+                                    placeholder="Gõ tên phim..." 
+                                    onkeypress="if(event.key === 'Enter') searchForExtraOnly()"> 
+                                <button class="btn btn-info" type="button" onclick="searchForExtraOnly()"> 
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <div id="tmdb-results-extra" class="list-group" style="max-height: 600px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                    <div class="card bg-dark text-white border-success mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title text-success"><i class="fas fa-database me-2"></i>Tìm phim nội bộ (MovieExtra)</h6>
+                            <div class="input-group mb-2">
+                                <input type="text" 
+                                    id="extra-search-input-internal" 
+                                    class="form-control bg-secondary text-white border-0" 
+                                    placeholder="Nhập tên phim đã có..."
+                                    oninput="searchInternalExtra()"
+                                    onkeypress="if(event.key === 'Enter') searchInternalExtra()"> 
+                                <button class="btn btn-success" type="button" onclick="searchInternalExtra()"> 
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <div id="internal-extra-results" class="list-group" style="max-height: 200px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-7">
+                    <div class="card bg-dark text-white border-success">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="card-title text-success mb-0"><i class="fas fa-edit me-2"></i>Thông tin ghi đè (MovieExtra)</h6>
+                            </div>
+
+                            <form action="/admin/save-movie-extra" method="POST" target="hidden_frame" id="form-movie-extra">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-2">
+                                            <label class="small text-white-50">Movie ID</label>
+                                            <div class="input-group">
+                                                <input type="text" name="movie_id" id="target-movie-id" 
+                                                    class="form-control form-control-sm bg-dark text-warning font-monospace" required>
+                                                <button class="btn btn-outline-warning btn-sm" type="button" onclick="generateMovieID()">
+                                                    Tạo mã mới
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small text-white-50">Tên phim</label>
+                                            <input type="text" name="title" id="target-movie-title" class="form-control form-control-sm bg-secondary text-white border-0">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small text-white-50">Ngày khởi chiếu</label>
+                                            <input type="date" name="release_date" id="target-release-date" class="form-control form-control-sm bg-secondary text-white border-0">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small text-white-50">Thời lượng (phút)</label>
+                                            <input type="number" name="runtime" id="target-runtime" class="form-control form-control-sm bg-secondary text-white border-0">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small text-white-50">Ngôn ngữ gốc</label>
+                                            <select name="original_language" id="target-original-language" class="form-select form-select-sm bg-secondary text-white border-0">
+                                                <option value="">-- Chọn ngôn ngữ --</option>
+                                                <option value="vi">Tiếng Việt</option>
+                                                <option value="en">Tiếng Anh</option>
+                                                <option value="ko">Tiếng Hàn</option>
+                                                <option value="ja">Tiếng Nhật</option>
+                                                <option value="th">Tiếng Thái</option>
+                                                <option value="zh">Tiếng Trung</option>
+                                                <option value="fr">Tiếng Pháp</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="mb-2">
+                                            <label class="small text-white-50">Link Poster (URL)</label>
+                                            <input type="text" name="poster_url" id="target-poster-url" class="form-control form-control-sm bg-secondary text-white border-0">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small text-white-50">Link Backdrop (Ảnh nền ngang)</label>
+                                            <input type="text" name="backdrop_url" id="target-backdrop-url" class="form-control form-control-sm bg-secondary text-white border-0">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small text-white-50">YouTube Trailer ID</label>
+                                            <input type="text" name="trailer_id" id="target-trailer-id" class="form-control form-control-sm bg-secondary text-white border-0">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small text-white-50">Đạo diễn</label>
+                                            <input type="text" name="director" id="target-director" class="form-control form-control-sm bg-secondary text-white border-0">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small text-white-50">Thể loại (ngăn cách bởi dấu phẩy)</label>
+                                            <input type="text" name="genres" id="target-genres" class="form-control form-control-sm bg-secondary text-white border-0" placeholder="Hành Động, Hài">
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="small text-white-50">Diễn viên (ngăn cách bởi dấu phẩy)</label>
+                                            <textarea name="cast" id="target-cast" class="form-control form-control-sm bg-secondary text-white border-0" rows="2" placeholder="Tên diễn viên 1, Tên diễn viên 2"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="small text-white-50">Mô tả phim (Overview)</label>
+                                    <textarea name="overview" id="target-overview" class="form-control form-control-sm bg-secondary text-white border-0" rows="3"></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-success w-100 mt-3 shadow">
+                                    <i class="fas fa-save me-2"></i>LƯU THÔNG TIN PHIM
+                                </button>
+                            </form>
+                            <iframe name="hidden_frame" style="display:none;"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const TMDB_KEY = "{{ tmdb_key }}";
+    const IMG_PATH = "https://image.tmdb.org/t/p/w500";
+
+    const searchInput = document.getElementById('movieSearchInput');
+    const btnSearch = document.getElementById('btnSearchMovie');
+    const resultList = document.getElementById('searchResultList');
+    const extraFields = document.getElementById('extraFields');
+
+    async function callTMDB(path, params = "") {
+        const res = await fetch(`https://api.themoviedb.org/3${path}?api_key=${TMDB_KEY}&language=vi-VN${params}`);
+        return await res.json();
+    }
+
+    btnSearch.addEventListener('click', async () => {
+        const query = searchInput.value.trim();
+        if (!query) return alert("Vui lòng nhập tên phim!");
+
+        const data = await callTMDB("/search/movie", `&query=${encodeURIComponent(query)}`);
+        resultList.innerHTML = "";
+
+        if (data.results?.length > 0) {
+            resultList.style.display = "block";
+            data.results.forEach(movie => {
+                const item = document.createElement('button');
+                item.type = "button";
+                item.className = "list-group-item list-group-item-action bg-dark text-white border-secondary";
+                item.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <img src="${movie.poster_path ? IMG_PATH + movie.poster_path : 'https://via.placeholder.com/50x75'}" style="width:40px; margin-right:10px" class="rounded">
+                        <div>
+                            <div class="fw-bold">${movie.title}</div>
+                            <small class="text-white">${movie.release_date?.split('-')[0] || 'N/A'}</small>
+                        </div>
+                    </div>`;
+                item.onclick = () => {
+                    selectMovie(movie);   
+                    selectMovieForExtra(movie);
+                };
+                resultList.appendChild(item);
+            });
+        } else alert("Không tìm thấy phim nào!");
+    });
+
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); btnSearch.click(); }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.movie-name').forEach(async el => {
+            const mid = el.getAttribute('data-id');
+            if (mid && mid !== 'None') {
+                const data = await callTMDB(`/movie/${mid}`);
+                
+                if (data && data.title) {
+                    el.innerText = data.title;
+                } else {
+                    try {
+                        const response = await fetch(`/admin/get-movie-extra/${mid}`);
+                        const localData = await response.json();
+                        if (localData.exists || localData.title) {
+                            el.innerText = localData.title || localData.name;
+                        }
+                    } catch (err) {
+                        console.error("Lỗi lấy phim nội bộ:", err);
+                    }
+                }
+            }
+        });
+    });
+
+    async function selectMovie(movie) {
+        const extraFields = document.getElementById('extraFields');
+        const resultList = document.getElementById('searchResultList');
+        const modalInternalList = document.getElementById('modalInternalResultList');
+
+        if (extraFields) extraFields.style.display = "block";
+        if (resultList) resultList.style.display = "none";
+        if (modalInternalList) modalInternalList.style.display = "none";
+
+        document.getElementById('movieTitle').innerText = movie.title || movie.name;
+        document.getElementById('movieIDDisplay').innerText = movie.movie_id || movie.id;
+        const overviewText = (movie.overview && movie.overview.trim() !== "") ? movie.overview : "Không có mô tả.";
+        document.getElementById('movieOverview').innerText = overviewText;
+        document.getElementById('edit_movie_id').value = movie.movie_id || movie.id;
+
+        const posterImg = document.getElementById('moviePoster');
+        if (movie.is_extra) {
+            posterImg.src = movie.poster_path || 'https://via.placeholder.com/300x450';
+        } else {
+            posterImg.src = movie.poster_path ? (typeof IMG_PATH !== 'undefined' ? IMG_PATH : "https://image.tmdb.org/t/p/w500") + movie.poster_path : 'https://via.placeholder.com/300x450';
+        }
+
+        const runtimeDisplay = document.getElementById('movieRuntime');
+        
+        if (movie.is_extra || movie.id.toString().length > 10) {
+            runtimeDisplay.innerText = (movie.runtime || "0") + " phút";
+        } else {
+            try {
+                const detail = await callTMDB(`/movie/${movie.id}`);
+                runtimeDisplay.innerText = (detail.runtime || "??") + " phút";
+            } catch (error) {
+                console.error("Lỗi lấy runtime TMDB:", error);
+                runtimeDisplay.innerText = "?? phút";
+            }
+        }
+    }
+
+    function editShowtime(id, cinemaID, movieID, roomID, startTime, price) {
+        document.getElementById('modalTitle').innerText = "Chỉnh sửa suất chiếu";
+        setupSubmitBtn("Cập nhật thay đổi");
+
+        document.getElementById('edit_showtime_id').value = id;
+        
+        const cinemaSelect = document.getElementById('edit_cinema_id');
+        cinemaSelect.value = cinemaID;
+
+        cinemaSelect.dispatchEvent(new Event('change')); 
+
+        const roomSelect = document.getElementById('edit_room_id');
+        roomSelect.value = roomID;
+        
+        document.getElementById('edit_movie_id').value = String(movieID);
+        document.getElementById('edit_price').value = price;
+
+        if (startTime) {
+            let date = new Date(startTime);
+            date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+            document.getElementById('edit_start_time').value = date.toISOString().slice(0, 16);
+        }
+        const strMovieID = String(movieID).trim();
+        if (movieID && movieID !== 'None') {
+            if (strMovieID.length > 10) {
+                fetch(`/admin/get-movie-extra/${movieID}`)
+                    .then(res => {
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data.exists) {
+                            console.log("Dữ liệu thực tế Server trả về:", data);
+                            const fakeMovieObj = {
+                                id: data.movie_id,     
+                                movie_id: data.movie_id, 
+                                title: data.title,
+                                overview: data.overview, 
+                                runtime: data.runtime,   
+                                poster_path: data.poster_url, 
+                                is_extra: true
+                            };
+                            console.log("Object giả lập chuẩn bị gửi vào selectMovie:", fakeMovieObj);
+                            selectMovie(fakeMovieObj); 
+                        } else {
+                            console.warn("Server báo phim này không tồn tại trong MovieExtra!");
+                        }
+                    })
+                    .catch(err => console.error("Lỗi lấy thông tin phim nội bộ:", err));
+            } else {
+                callTMDB(`/movie/${movieID}`).then(selectMovie);
+            }
+        }
+
+        new bootstrap.Modal(document.getElementById('addShowtimeModal')).show();
+    }
+
+    function loadRooms(cinemaId) {
+        return fetch(`/get_rooms/${cinemaId}`)
+            .then(res => res.json())
+            .then(data => {
+                const roomSelect = document.getElementById('edit_room_id');
+                const options = data.rooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+                roomSelect.innerHTML = `<option value="">--- Chọn Phòng ---</option>${options}`;
+            })
+            .catch(err => console.error("Lỗi:", err));
+    }
+
+    document.querySelector('[data-bs-target="#addShowtimeModal"]').addEventListener('click', () => {
+        document.getElementById('modalTitle').innerText = "Tạo suất chiếu mới";
+        setupSubmitBtn("Xác nhận tạo");
+        document.getElementById('showtimeForm').reset();
+        document.getElementById('edit_showtime_id').value = "";
+        extraFields.style.display = "none";
+        searchInput.value = "";
+    });
+
+    function setupSubmitBtn(text) {
+        const btn = document.getElementById('btnSubmit');
+        btn.innerText = text;
+        btn.disabled = false;
+        
+        btn.onclick = function() {
+            const form = document.getElementById('showtimeForm');
+            const showtimeId = document.getElementById('edit_showtime_id').value;
+            const movieID = document.getElementById('edit_movie_id').value;
+
+            if (showtimeId && showtimeId !== "") {
+                form.action = "/admin/update-showtime";
+            } else {
+                form.action = "/admin/add-showtime";
+            }
+
+            console.log("--- THÔNG TIN GỬI ---");
+            console.log("Đích đến:", form.action);
+            console.log("ID Suất chiếu:", showtimeId);
+            console.log("ID Phim:", movieID);
+
+            this.disabled = true;
+            this.innerText = "Đang xử lý...";
+            
+            form.target = "hidden_frame"; 
+            form.submit();
+
+            if (showtimeId) {
+                const row = document.getElementById(`row-${showtimeId}`);
+                if (row) {
+                    const newPrice = document.getElementById('edit_price').value;
+                    const newMovieTitle = document.getElementById('movieTitle').innerText;
+                    const priceCell = row.querySelector('.price-cell');
+                    if (priceCell) priceCell.innerText = parseInt(newPrice).toLocaleString('vi-VN') + "đ";
+                    const nameCell = row.querySelector('.movie-name');
+                    if (nameCell) nameCell.innerText = newMovieTitle;
+                }
+            }
+
+            const modalInstance = bootstrap.Modal.getInstance(document.getElementById('addShowtimeModal'));
+            if (modalInstance) modalInstance.hide();
+
+            setTimeout(() => {
+                this.disabled = false;
+                this.innerText = text;
+            }, 1000);
+        };
+    }
+
+    async function clearExpired() {
+        if(confirm("Xóa tất cả đặt vé quá hạn?")) {
+            const res = await fetch('/admin/clear-expired-bookings', { method: 'POST' });
+            const data = await res.text();
+            alert(data); 
+            location.reload();
+        }
+    }
+
+    function filterCinema() {
+        const selectedCinemaId = document.getElementById('cinemaFilter').value;
+        const sections = document.querySelectorAll('.cinema-section');
+        const bookingRows = document.querySelectorAll('.booking-item');
+
+        sections.forEach(section => {
+            if (selectedCinemaId === "all" || section.id === selectedCinemaId) {
+                section.style.display = "";
+            } else {
+                section.style.display = "none";
+            }
+        });
+
+        bookingRows.forEach(row => {
+            const rowCinemaId = row.getAttribute('data-cinema-id');
+            if (selectedCinemaId === "all" || rowCinemaId === selectedCinemaId) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+    const cinemaRooms = {
+        {% for cinema in cinemas %}
+        "{{ cinema.id }}": [
+            {% for room in cinema.rooms %}
+            { "id": "{{ room.id }}", "name": "{{ room.name }}", "capacity": "{{ room.capacity }}" },
+            {% endfor %}
+        ],
+        {% endfor %}
+    };
+
+    document.getElementById('edit_cinema_id').addEventListener('change', function() {
+        const cinemaId = this.value;
+        const roomSelect = document.getElementById('edit_room_id');
+        
+        roomSelect.innerHTML = '<option value="">--- Chọn Phòng ---</option>';
+        
+        if (cinemaId && cinemaRooms[cinemaId]) {
+            cinemaRooms[cinemaId].forEach(room => {
+                const option = document.createElement('option');
+                option.value = room.id;
+                option.textContent = `${room.name} (Sức chứa: ${room.capacity})`;
+                roomSelect.appendChild(option);
+            });
+        } else {
+            roomSelect.innerHTML = '<option value="">--- Vui lòng chọn rạp trước ---</option>';
+        }
+    });
+
+    document.querySelectorAll('.movie-search-input').forEach(input => {
+        input.addEventListener('input', function() {
+            const query = this.value;
+            const parent = this.parentElement;
+            const dropdown = parent.querySelector('.search-results-dropdown');
+
+            if (query.length < 2) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=vi-VN`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.results && data.results.length > 0) {
+                        dropdown.innerHTML = data.results.map(m => {
+                            const safeTitle = m.title.replace(/'/g, "\\'");
+                            return `
+                                <button type="button" class="list-group-item list-group-item-action bg-dark text-white border-secondary small p-2" 
+                                        onclick="selectMovieForInput(this, ${m.id}, '${safeTitle}')">
+                                    <img src="${m.poster_path ? 'https://image.tmdb.org/t/p/w92' + m.poster_path : 'https://via.placeholder.com/20x30'}" style="width:20px" class="me-1 rounded">
+                                    ${m.title} (${m.release_date ? m.release_date.split('-')[0] : 'N/A'})
+                                </button>`;
+                        }).join('');
+                        dropdown.style.display = 'block';
+                    } else {
+                        dropdown.style.display = 'none';
+                    }
+                });
+        });
+    });
+
+    function selectMovieForInput(btn, id, title) {
+        const parent = btn.closest('.position-relative');
+        const input = parent.querySelector('.movie-search-input');
+        const storage = parent.querySelector('.hot-movie-id-storage');
+        const dropdown = parent.querySelector('.search-results-dropdown');
+
+        input.value = title; 
+        storage.value = id;  
+        dropdown.style.display = 'none';
+    }
+
+    function executeManualAutoSeed(btnElement) { 
+        const cinemaEl = document.getElementById('manual_auto_cinema_id');
+        const dateEl = document.getElementById('manual_auto_date');
+
+        if (!cinemaEl || !dateEl) {
+            alert("Lỗi hệ thống: Không tìm thấy phần tử nhập liệu!");
+            return;
+        }
+
+        const cinemaId = cinemaEl.value;
+        const date = dateEl.value;
+        
+        const movieIds = Array.from(document.querySelectorAll('.hot-movie-id-storage'))
+                                .map(el => el.value)
+                                .filter(v => v !== "");
+
+        if (!date || movieIds.length < 5) {
+            return alert("Vui lòng chọn ngày và chọn đủ 5 phim từ danh sách gợi ý!");
+        }
+
+        const originalHTML = btnElement.innerHTML;
+        btnElement.disabled = true;
+        btnElement.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> ĐANG TẠO...';
+
+        fetch('/admin/manual-auto-seed', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ cinema_id: cinemaId, date: date, movie_ids: movieIds })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) { 
+                alert("Đã phủ kín lịch thành công!");
+            } else {
+                alert("Lỗi: " + data.message);
+            }
+        })
+        .catch(err => {
+            console.error("Lỗi:", err);
+        })
+        .finally(() => {
+            btnElement.disabled = false;
+            btnElement.innerHTML = originalHTML;
+        });
+    }
+
+    function deleteScheduleByDay() {
+        const cinemaId = document.getElementById('delete_cinema_id').value;
+        const date = document.getElementById('delete_date').value;
+
+        console.log("Đang xóa rạp ID:", cinemaId, "vào ngày:", date); 
+
+        if (!date) {
+            alert("Vui lòng chọn ngày muốn xóa!");
+            return;
+        }
+
+        if (confirm(`Bạn có chắc muốn xóa SẠCH suất chiếu của rạp này trong ngày ${date}?`)) {
+            fetch('/admin/delete-schedule', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    cinema_id: cinemaId, 
+                    date: date 
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    alert(data.message);
+                    const section = document.getElementById(`cinema-${cinemaId}`);
+                    if (section) section.style.opacity = '0.3'; 
+                } else {
+                    alert("Lỗi: " + data.message);
+                }
+            })
+            .catch(err => {
+                console.error("Lỗi Fetch:", err);
+                alert("Có lỗi xảy ra khi kết nối server!");
+            });
+        }
+    }
+    function handleToggleAuto(checkbox) {
+        const status = checkbox.checked;
+        fetch('/admin/toggle-auto-seed', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ status: status })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                alert(data.message);
+            }
+        });
+    }
+    function openConcessionModal(id='', name='', price='', img='', desc='', cat='') {
+        document.getElementById('form_id').value = id;
+        document.getElementById('form_name').value = name;
+        document.getElementById('form_price').value = price;
+        document.getElementById('form_img').value = img;
+        document.getElementById('form_desc').value = desc;
+        document.getElementById('form_cat').value = cat;
+        
+        document.getElementById('modalTitle').innerText = id ? "Cập nhật sản phẩm" : "Thêm món mới";
+        
+        var myModal = new bootstrap.Modal(document.getElementById('concessionModal'));
+        myModal.show();
+    }
+    function handleCancelSubmit(formElement, bookingId) {
+        if (!confirm("Xác nhận hủy vé #" + bookingId + "?")) return false;
+        const formData = new FormData(formElement);
+        fetch(formElement.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                let row = formElement.closest('tr');
+                const statusCell = row.querySelector('td:nth-last-child(2)'); 
+                if (statusCell) {
+                    statusCell.innerHTML = '<span class="badge bg-danger">Vé đã hủy</span>';
+                }
+                formElement.innerHTML = '<span class="text-danger small fw-bold">ĐÃ HỦY</span>';
+                row.style.opacity = '0.6';
+            } else {
+                alert("Lỗi: " + data.message);
+            }
+        })
+        .catch(err => alert("Lỗi kết nối server!"));
+        return false; 
+    }
+    flatpickr("#date_range", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d-m-Y",  
+        locale: "vn",
+        onClose: function(selectedDates, dateStr, instance) {
+            if (selectedDates.length === 2) {
+                document.getElementById("filterForm").submit();
+            }
+        }
+    });
+
+    const tmdbSearchInputExtra = document.getElementById('tmdb-search-input-extra');
+    const tmdbResultsExtra = document.getElementById('tmdb-results-extra');
+
+    if (tmdbSearchInputExtra) {
+        tmdbSearchInputExtra.addEventListener('input', function () {
+            const query = this.value.trim();
+            if (query.length < 2) {
+                tmdbResultsExtra.innerHTML = '';
+                return;
+            }
+            searchForExtraOnly();
+        });
+
+        tmdbSearchInputExtra.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') searchForExtraOnly();
+        });
+    }
+
+    async function searchForExtraOnly() {
+        const inputEl = document.getElementById('tmdb-search-input-extra');
+        const resultContainer = document.getElementById('tmdb-results-extra');
+
+        const query = inputEl.value.trim();
+        if (!query || query.length < 2) {
+            resultContainer.innerHTML = '';
+            return;
+        }
+
+        fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=vi-VN`)
+            .then(res => res.json())
+            .then(data => {
+                resultContainer.innerHTML = '';
+
+                if (data.results && data.results.length > 0) {
+                    data.results.slice(0, 8).forEach(movie => {
+                        const item = document.createElement('div');
+                        item.className = 'list-group-item list-group-item-action bg-dark text-white border-secondary d-flex align-items-center mb-1';
+                        item.style.cursor = 'pointer';
+
+                        const poster = movie.poster_path
+                            ? 'https://image.tmdb.org/t/p/w92' + movie.poster_path
+                            : 'https://via.placeholder.com/40x60';
+
+                        item.innerHTML = `
+                            <img src="${poster}" class="me-3 rounded" style="width:35px; height:50px; object-fit:cover;">
+                            <div class="text-start">
+                                <div class="fw-bold" style="font-size:0.85rem;">${movie.title}</div>
+                                <small class="text-info" style="font-size:0.75rem;">${movie.release_date ? movie.release_date.split('-')[0] : 'N/A'}</small>
+                            </div>`;
+
+                        item.onclick = () => {
+                            selectMovieForExtra(movie);
+                            resultContainer.innerHTML = '';
+                            inputEl.value = movie.title; 
+                        };
+
+                        resultContainer.appendChild(item);
+                    });
+                } else {
+                    resultContainer.innerHTML = '<div class="small text-warning p-2">Không tìm thấy phim!</div>';
+                }
+            })
+            .catch(err => {
+                console.error('Lỗi tìm kiếm:', err);
+                resultContainer.innerHTML = '<div class="small text-danger p-2">Lỗi kết nối API!</div>';
+            });
+    }
+
+    async function selectMovieForExtra(movie) {
+        let extraData = null;
+        try {
+            const response = await fetch(`/admin/get-movie-extra/${movie.id}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.exists) extraData = data;
+            }
+        } catch (e) { console.error("Lỗi check DB:", e); }
+
+        const setId = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val || "";
+        };
+
+        const isInternal = String(movie.id).length > 10 || movie.is_extra;
+
+        if (isInternal) {
+            if (extraData) {
+                setId('target-movie-id', extraData.movie_id);
+                setId('target-movie-title', extraData.title);
+                setId('target-poster-url', extraData.poster_url);
+                setId('target-runtime', extraData.runtime);
+                setId('target-overview', extraData.overview);
+                setId('target-release-date', extraData.release_date);
+                setId('target-backdrop-url', extraData.backdrop_url);
+                setId('target-original-language', extraData.original_language);
+                setId('target-director', extraData.director);
+                setId('target-genres', extraData.genres);
+                setId('target-cast', extraData.cast);
+                setId('target-trailer-id', extraData.trailer_id);
+            } else {
+                setId('target-movie-id', movie.id);
+                ['target-movie-title', 'target-poster-url', 'target-overview', 
+                'target-runtime', 'target-release-date', 'target-director'].forEach(id => setId(id, ""));
+            }
+
+            const resultsExtra = document.getElementById('tmdb-results-extra');
+            if (resultsExtra) resultsExtra.innerHTML = "";
+            
+            const internalResults = document.getElementById('internal-extra-results');
+            if (internalResults) internalResults.innerHTML = "";
+            
+            return;
+        }
+
+        try {
+            const [detailData, videosRes] = await Promise.all([
+                callTMDB(`/movie/${movie.id}`, "&append_to_response=credits"),
+                fetch(`https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_KEY}`)
+            ]);
+            const videosData = await videosRes.json();
+
+            if (detailData) {
+                setId('target-movie-id',          movie.id);
+                setId('target-movie-title',       (extraData && extraData.title)             ? extraData.title             : detailData.title);
+                setId('target-poster-url',        (extraData && extraData.poster_url)        ? extraData.poster_url        : "https://image.tmdb.org/t/p/original" + detailData.poster_path);
+                setId('target-runtime',           (extraData && extraData.runtime)           ? extraData.runtime           : detailData.runtime);
+                setId('target-overview',          (extraData && extraData.overview)          ? extraData.overview          : detailData.overview);
+                setId('target-release-date',      (extraData && extraData.release_date)      ? extraData.release_date      : detailData.release_date);
+                setId('target-backdrop-url',      (extraData && extraData.backdrop_url)      ? extraData.backdrop_url      : "https://image.tmdb.org/t/p/original" + detailData.backdrop_path);
+                setId('target-original-language', (extraData && extraData.original_language) ? extraData.original_language : detailData.original_language);
+
+                const tmdbDirector = detailData.credits?.crew?.find(c => c.job === 'Director')?.name || "";
+                setId('target-director', (extraData && extraData.director) ? extraData.director : tmdbDirector);
+
+                const tmdbGenres = detailData.genres?.map(g => g.name).join(", ") || "";
+                setId('target-genres', (extraData && extraData.genres) ? extraData.genres : tmdbGenres);
+
+                const tmdbCast = detailData.credits?.cast?.slice(0, 10).map(c => c.name).join(", ") || "";
+                setId('target-cast', (extraData && extraData.cast) ? extraData.cast : tmdbCast);
+
+                if (extraData && extraData.trailer_id) {
+                    setId('target-trailer-id', extraData.trailer_id);
+                } else {
+                    const videos = videosData.results || [];
+                    let targetVideo = videos.find(v => v.site === 'YouTube' && v.type === 'Trailer');
+                    if (!targetVideo) targetVideo = videos.find(v => v.site === 'YouTube' && v.type === 'Teaser');
+                    if (!targetVideo) targetVideo = videos.find(v => v.site === 'YouTube');
+                    setId('target-trailer-id', targetVideo ? targetVideo.key : '');
+                }
+            }
+        } catch(e) {
+            console.error("Lỗi gọi TMDB:", e);
+        }
+
+        const resultContainer = document.getElementById('tmdb-results-extra');
+        if (document.getElementById('tmdb-results-extra')) 
+            document.getElementById('tmdb-results-extra').innerHTML = "";
+    }
+    let manualSelectedMovieId = null;
+
+    document.getElementById('manual_movie_search_btn').addEventListener('click', doManualMovieSearch);
+    document.getElementById('manual_movie_search').addEventListener('keypress', e => {
+        if (e.key === 'Enter') doManualMovieSearch();
+    });
+    document.getElementById('manual_movie_search').addEventListener('input', function () {
+        if (this.value.length >= 2) doManualMovieSearch();
+        else document.getElementById('manual_movie_results').style.display = 'none';
+    });
+    document.getElementById('manual_movie_search_extra').addEventListener('input', function() {
+        if (this.value.length >= 2) doManualMovieSearch('extra');
+        else document.getElementById('manual_movie_results').style.display = 'none';
+    });
+    async function doManualMovieSearch(source = 'tmdb') {
+        const inputId = (source === 'extra') ? 'manual_movie_search_extra' : 'manual_movie_search';
+        const query = document.getElementById(inputId).value.trim();
+        if (!query || query.length < 2) return;
+        const resultsBox = document.getElementById('manual_movie_results');
+        resultsBox.innerHTML = '<div class="list-group-item bg-dark text-white-50 small">Đang tìm...</div>';
+        resultsBox.style.display = 'block';
+
+        try {
+            let results = [];
+        
+            if (source === 'tmdb') {
+                const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=vi-VN`);
+                const data = await res.json();
+                results = data.results || [];
+            } else {
+                const res = await fetch(`/admin/search-movie-extra?q=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                results = data.map(m => ({
+                    id: m.movie_id,
+                    title: m.title,
+                    poster_path: m.poster_url, 
+                    release_date: m.release_date,
+                    is_extra: true 
+                }));
+            }
+            resultsBox.innerHTML = '';
+            if (results.length > 0) {
+                results.slice(0, 8).forEach(movie => {
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'list-group-item list-group-item-action bg-dark text-white border-secondary d-flex align-items-center gap-2 small py-2';
+                    
+                    let poster = 'https://via.placeholder.com/30x45';
+                    if (movie.is_extra) {
+                        poster = movie.poster_path || poster;
+                    } else if (movie.poster_path) {
+                        poster = `https://image.tmdb.org/t/p/w92${movie.poster_path}`;
+                    }
+
+                    const year = movie.release_date ? movie.release_date.split('-')[0] : 'N/A';
+                    const sourceBadge = movie.is_extra ? '<span class="badge bg-success" style="font-size:9px;">EXTRA</span>' : '<span class="badge bg-info" style="font-size:9px;">TMDB</span>';
+
+                    item.innerHTML = `
+                        <img src="${poster}" style="width:28px;height:42px;object-fit:cover;border-radius:3px;flex-shrink:0;">
+                        <div class="overflow-hidden">
+                            <div class="fw-bold text-truncate" style="font-size:12px;">${movie.title} ${sourceBadge}</div>
+                            <div class="text-info" style="font-size:11px;">${year} · ID: ${movie.id}</div>
+                        </div>`;
+                    
+                    item.onclick = () => selectManualMovie(movie);
+                    resultsBox.appendChild(item);
+                });
+            } else {
+                resultsBox.innerHTML = '<div class="list-group-item bg-dark text-warning small">Không tìm thấy phim!</div>';
+            }
+        } catch (err) {
+            resultsBox.innerHTML = '<div class="list-group-item bg-dark text-danger small">Lỗi kết nối API!</div>';
+        }
+    }
+
+    async function selectManualMovie(movie) {
+        document.getElementById('manual_movie_results').style.display = 'none';
+        document.getElementById('manual_movie_search').value = movie.title;
+        manualSelectedMovieId = movie.id;
+        document.getElementById('manual_movie_id_val').value = movie.id;
+
+        document.getElementById('manual_selected_movie_card').style.display = 'block';
+        document.getElementById('manual_movie_title_display').innerText = movie.title;
+        document.getElementById('manual_movie_id_display').innerText = movie.id;
+        if (movie.poster_path && (movie.poster_path.startsWith('http') || movie.poster_path.startsWith('/static'))) {
+            document.getElementById('manual_movie_poster').src = movie.poster_path;
+        } else {
+            document.getElementById('manual_movie_poster').src = movie.poster_path
+                ? `https://image.tmdb.org/t/p/w185${movie.poster_path}`
+                : 'https://via.placeholder.com/60x90';
+        }
+
+        let runtime = '';
+        try {
+            const extraRes = await fetch(`/admin/get-movie-extra/${movie.id}`);
+            if (extraRes.ok) {
+                const extraData = await extraRes.json();
+                if (extraData.exists && extraData.runtime) {
+                    runtime = extraData.runtime + ' phút (MovieExtra)';
+                    if (extraData.poster_url) {
+                        document.getElementById('manual_movie_poster').src = extraData.poster_url;
+                    }
+                    if (extraData.title) document.getElementById('manual_movie_title_display').innerText = extraData.title;
+                }
+            }
+        } catch (e) { console.error("Lỗi fetch extra:", e); }
+
+        if (!runtime) {
+            try {
+                const detail = await callTMDB(`/movie/${movie.id}`);
+                runtime = (detail.runtime || '?') + ' phút (TMDB)';
+                if (detail.poster_path && !document.getElementById('manual_movie_poster').src.includes('/static')) {
+                    document.getElementById('manual_movie_poster').src = `https://image.tmdb.org/t/p/w185${detail.poster_path}`;
+                }
+            } catch (e) { runtime = '? phút'; }
+        }
+
+        document.getElementById('manual_movie_runtime_display').innerText = runtime;
+        updateManualPreview();
+    }
+
+    function clearManualMovie() {
+        manualSelectedMovieId = null;
+        document.getElementById('manual_movie_id_val').value = '';
+        document.getElementById('manual_movie_search').value = '';
+        document.getElementById('manual_selected_movie_card').style.display = 'none';
+        document.getElementById('manual_preview_box').style.display = 'none';
+    }
+
+    function loadManualRooms() {
+        const cinemaId = document.getElementById('manual_cinema_id').value;
+        const roomSelect = document.getElementById('manual_room_id');
+        roomSelect.innerHTML = '<option value="">--- Chọn phòng ---</option>';
+        if (cinemaId && cinemaRooms[cinemaId]) {
+            cinemaRooms[cinemaId].forEach(room => {
+                const opt = document.createElement('option');
+                opt.value = room.id;
+                opt.textContent = `${room.name} (${room.capacity} ghế)`;
+                roomSelect.appendChild(opt);
+            });
+        }
+        updateManualPreview();
+    }
+
+    function updateManualPreview() {
+        const movieTitle = document.getElementById('manual_movie_title_display').innerText;
+        const cinemaEl = document.getElementById('manual_cinema_id');
+        const roomEl = document.getElementById('manual_room_id');
+        const startTime = document.getElementById('manual_start_time').value;
+        const price = document.getElementById('manual_price').value;
+
+        const cinemaText = cinemaEl.options[cinemaEl.selectedIndex]?.text || '-';
+        const roomText = roomEl.options[roomEl.selectedIndex]?.text || '-';
+
+        if (manualSelectedMovieId || startTime || price) {
+            document.getElementById('manual_preview_box').style.display = 'block';
+            document.getElementById('prev_s_movie').innerText = movieTitle || '-';
+            document.getElementById('prev_s_cinema').innerText = cinemaText;
+            document.getElementById('prev_s_room').innerText = roomText;
+
+            if (startTime) {
+                const d = new Date(startTime);
+                document.getElementById('prev_s_time').innerText =
+                    `${d.toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})} ${d.toLocaleDateString('vi-VN')}`;
+            } else {
+                document.getElementById('prev_s_time').innerText = '-';
+            }
+
+            document.getElementById('prev_s_price').innerText = price
+                ? parseInt(price).toLocaleString('vi-VN') + 'đ' : '-';
+        }
+    }
+
+    document.getElementById('manual_room_id').addEventListener('change', updateManualPreview);
+    document.getElementById('manual_start_time').addEventListener('change', updateManualPreview);
+    document.getElementById('manual_price').addEventListener('input', updateManualPreview);
+
+    async function submitManualShowtime(btn) {
+        const movieId = document.getElementById('manual_movie_id_val').value;
+        const roomId = document.getElementById('manual_room_id').value;
+        const startTime = document.getElementById('manual_start_time').value;
+        const price = document.getElementById('manual_price').value;
+
+        if (!movieId || !roomId || !startTime || !price) {
+            return alert('Vui lòng điền đầy đủ: phim, phòng, ngày giờ và giá vé!');
+        }
+
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> ĐANG TẠO...';
+
+        const formData = new FormData();
+        formData.append('movie_id', movieId);
+        formData.append('room_id', roomId);
+        formData.append('start_time', startTime);
+        formData.append('price', price);
+
+        try {
+            await fetch('/admin/add-showtime', { method: 'POST', body: formData });
+            alert('Đã tạo suất chiếu thành công!');
+            clearManualMovie();
+            document.getElementById('manual_cinema_id').value = '';
+            document.getElementById('manual_room_id').innerHTML = '<option value="">--- Chọn rạp trước ---</option>';
+            document.getElementById('manual_start_time').value = '';
+            document.getElementById('manual_price').value = '';
+            document.getElementById('manual_preview_box').style.display = 'none';
+        } catch (err) {
+            alert('Lỗi kết nối server!');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        if (resultList && !searchInput.contains(e.target) && !resultList.contains(e.target)) {
+            resultList.style.display = 'none';
+        }
+        if (!e.target.classList.contains('movie-search-input')) {
+            document.querySelectorAll('.search-results-dropdown').forEach(d => d.style.display = 'none');
+        }
+        if (tmdbSearchInputExtra && !tmdbSearchInputExtra.contains(e.target) && tmdbResultsExtra && !tmdbResultsExtra.contains(e.target)) {
+            tmdbResultsExtra.innerHTML = '';
+        }
+        const manualSearch = document.getElementById('manual_movie_search');
+        const manualResults = document.getElementById('manual_movie_results');
+        if (manualSearch && manualResults && !manualSearch.contains(e.target) && !manualResults.contains(e.target)) {
+            manualResults.style.display = 'none';
+        }
+        const modalInternal = document.getElementById('modalInternalSearchInput');
+        const modalInternalList = document.getElementById('modalInternalResultList');
+        if (modalInternal && modalInternalList && !modalInternal.contains(e.target) && !modalInternalList.contains(e.target)) {
+            modalInternalList.style.display = 'none';
+        }
+    });
+    async function searchInternalExtra() {
+        const input = document.getElementById('extra-search-input-internal');
+        const resultsBox = document.getElementById('internal-extra-results');
+        const query = input.value.trim();
+
+        if (query.length < 2) {
+            resultsBox.innerHTML = '';
+            return;
+        }
+
+        resultsBox.innerHTML = '<div class="list-group-item bg-dark text-white-50 small py-2">Đang tìm...</div>';
+
+        try {
+            const res = await fetch(`/admin/search-movie-extra?q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            resultsBox.innerHTML = '';
+
+            if (data.length > 0) {
+                data.forEach(m => {
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item list-group-item-action bg-dark text-white border-secondary d-flex align-items-center gap-2 small py-2';
+                    item.style.cursor = 'pointer';
+                    const poster = m.poster_url || 'https://via.placeholder.com/28x42';
+                    const year = m.release_date ? m.release_date.split('-')[0] : 'N/A';
+                    item.innerHTML = `
+                        <img src="${poster}" style="width:28px;height:42px;object-fit:cover;border-radius:3px;flex-shrink:0;">
+                        <div>
+                            <div class="fw-bold" style="font-size:12px;">${m.title} <span class="badge bg-success" style="font-size:9px;">EXTRA</span></div>
+                            <div class="text-info" style="font-size:11px;">${year} · ID: ${m.movie_id}</div>
+                        </div>`;
+                    item.onclick = () => {
+                        selectMovieForExtra({ id: m.movie_id, title: m.title, poster_path: m.poster_url, release_date: m.release_date, is_extra: true });
+                        document.getElementById('extra-search-input-internal').value = m.title;
+                        resultsBox.innerHTML = '';
+                    };
+                    resultsBox.appendChild(item);
+                });
+            } else {
+                resultsBox.innerHTML = '<div class="list-group-item bg-dark text-warning small py-2">Không tìm thấy phim!</div>';
+            }
+        } catch (err) {
+            resultsBox.innerHTML = '<div class="list-group-item bg-dark text-danger small py-2">Lỗi kết nối server!</div>';
+        }
+    }
+
+    async function searchModalInternal() {
+        const input = document.getElementById('modalInternalSearchInput');
+        const resultList = document.getElementById('modalInternalResultList');
+        const query = input.value.trim();
+
+        if (query.length < 2) {
+            resultList.style.display = 'none';
+            return;
+        }
+
+        try {
+            const res = await fetch(`/admin/search-movie-extra?q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            resultList.innerHTML = '';
+
+            if (data.length > 0) {
+                resultList.style.display = 'block';
+                data.forEach(m => {
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'list-group-item list-group-item-action bg-dark text-white border-secondary';
+                    const poster = m.poster_url || 'https://via.placeholder.com/40x60';
+                    const year = m.release_date ? m.release_date.split('-')[0] : 'N/A';
+                    item.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <img src="${poster}" style="width:40px;height:56px;object-fit:cover;border-radius:4px;margin-right:10px;flex-shrink:0;">
+                            <div>
+                                <div class="fw-bold" style="font-size:13px;">${m.title} <span class="badge bg-success" style="font-size:9px;">EXTRA</span></div>
+                                <small class="text-info">${year} · ID: ${m.movie_id}</small>
+                            </div>
+                        </div>`;
+                    item.onclick = () => {
+                        selectMovie({ id: m.movie_id, title: m.title, poster_path: null, overview: '' });
+                        document.getElementById('moviePoster').src = m.poster_url || 'https://via.placeholder.com/300x450';
+                        document.getElementById('movieTitle').innerText = m.title;
+                        document.getElementById('movieIDDisplay').innerText = m.movie_id;
+                        document.getElementById('edit_movie_id').value = m.movie_id;
+                        fetch(`/admin/get-movie-extra/${m.movie_id}`)
+                            .then(r => r.json())
+                            .then(d => {
+                                if (d.exists && d.runtime)
+                                    document.getElementById('movieRuntime').innerText = d.runtime + ' phút';
+                            });
+                        resultList.style.display = 'none';
+                        input.value = m.title;
+                    };
+                    resultList.appendChild(item);
+                });
+            } else {
+                resultList.innerHTML = '<button type="button" class="list-group-item bg-dark text-warning small">Không tìm thấy phim nào trong hệ thống!</button>';
+                resultList.style.display = 'block';
+            }
+        } catch (err) {
+            resultList.innerHTML = '<button type="button" class="list-group-item bg-dark text-danger small">Lỗi kết nối server!</button>';
+            resultList.style.display = 'block';
+        }
+    }
+    function generateMovieID() {
+        const timestamp = Date.now(); 
+        const randomSuffix = Math.floor(Math.random() * 100); 
+        const newID = `${timestamp}${randomSuffix}`;
+        
+        document.getElementById('target-movie-id').value = newID;
+    }
+    function fetchInternalMovieName(movieID, element) {
+        fetch(`/admin/get-movie-extra/${movieID}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.exists || data.title) {
+                    element.innerText = data.title || data.name;
+                } else {
+                    console.log("Không tìm thấy phim ID:", movieID);
+                }
+            })
+            .catch(err => {
+                console.error("Lỗi fetch nội bộ:", err);
+            });
+    }
+</script>
+</body>
+</html>

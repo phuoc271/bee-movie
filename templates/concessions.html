@@ -1,0 +1,173 @@
+{% extends "header.html" %} 
+
+{% block title %}Bắp Nước - Bee Movie Cinema{% endblock %} 
+
+{% block content %}
+<main style="background-color: #000; color: #fff; min-height: 100vh; padding-bottom: 50px;">
+    <section class="movie-list" style="padding: 40px 10%; text-align: center;">
+        <h2 style="color: #ffc107; border-bottom: 2px solid #ffc107; display: inline-block; padding-bottom: 10px; margin-bottom: 40px; font-weight: bold; text-transform: uppercase;">
+            COMBO ƯU ĐÃI
+        </h2>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 30px; justify-content: center;">
+            {% for item in combos %}
+            <div class="concessions-card" style="background: #1a1a1a; border-radius: 15px; width: 300px; overflow: hidden; border: 1px solid #333; transition: all 0.4s ease; display: flex; flex-direction: column;">
+                <div style="width: 100%; height: 220px; overflow: hidden;">
+                    <img src="{{ url_for('static', filename=item.img) }}" alt="{{ item.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                
+                <div style="padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.2rem; color: #fff; height: 3rem; display: flex; align-items: center; justify-content: center;">
+                            {{ item.name }}
+                        </h3>
+                        <p style="color: #999; font-size: 0.85rem; margin: 10px 0; line-height: 1.4; min-height: 40px;">
+                            {{ item.description }}
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <p style="color: #ffc107; font-weight: bold; font-size: 1.5rem; margin: 15px 0;">
+                            {{ "{:,.0f}".format(item.price) }} VNĐ
+                        </p>
+                        
+                        <div style="display: flex; gap: 10px; justify-content: center; align-items: center;">
+                            <button onclick="buyNow('{{ item.id }}')" 
+                                    style="background: #ffc107; color: #000; padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold; flex: 1; transition: 0.3s; text-align: center; cursor: pointer;">
+                                MUA NGAY
+                            </button>
+                            
+                            <a href="{{ url_for('booking.add_to_cart', item_id=item.id) }}" 
+                            style="background: transparent; color: #ffc107; padding: 7px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; flex: 1; border: 1px solid #ffc107; transition: 0.3s; text-align: center; display: flex; align-items: center; justify-content: center;">
+                                + GIỎ HÀNG
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+            {% endfor %}
+        </div>
+    </section>
+
+    <div style="padding: 0 15%;">
+        <hr style="border: 0; border-top: 1px solid #222;">
+    </div>
+
+    <section class="movie-list" style="padding: 40px 10%; text-align: center;">
+        <h2 style="color: #ffc107; border-bottom: 2px solid #ffc107; display: inline-block; padding-bottom: 10px; margin-bottom: 40px; font-weight: bold; text-transform: uppercase;">
+            MÓN LẺ
+        </h2>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 30px; justify-content: center;">
+            {% for item in singles %}
+            <div class="concessions-card" style="background: #1a1a1a; border-radius: 15px; width: 300px; overflow: hidden; border: 1px solid #333; transition: all 0.4s ease; display: flex; flex-direction: column;">
+                <div style="width: 100%; height: 220px; overflow: hidden;">
+                    <img src="{{ url_for('static', filename=item.img) }}" alt="{{ item.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                
+                <div style="padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.2rem; color: #fff; height: 3rem; display: flex; align-items: center; justify-content: center;">
+                            {{ item.name }}
+                        </h3>
+                        <p style="color: #999; font-size: 0.85rem; margin: 10px 0; line-height: 1.4; min-height: 40px;">
+                            {{ item.description }}
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <p style="color: #ffc107; font-weight: bold; font-size: 1.5rem; margin: 15px 0;">
+                            {{ "{:,.0f}".format(item.price) }} VNĐ
+                        </p>
+                        
+                        <div style="display: flex; gap: 10px; justify-content: center; align-items: center;">
+                            <button onclick="buyNow('{{ item.id }}')" 
+                                    style="background: #ffc107; color: #000; padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold; flex: 1; transition: 0.3s; text-align: center; cursor: pointer;">
+                                MUA NGAY
+                            </button>
+                            
+                            <a href="{{ url_for('booking.add_to_cart', item_id=item.id) }}" 
+                               onclick="addToCartSilent(event, this.href)"
+                               style="background: transparent; color: #ffc107; padding: 7px 10px; border-radius: 6px; text-decoration: none; font-weight: bold; flex: 1; border: 1px solid #ffc107; transition: 0.3s; text-align: center; display: flex; align-items: center; justify-content: center;">
+                                + GIỎ HÀNG
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if is_from_booking %}
+    <style>
+        .booking-sticky-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #111;
+            border-top: 3px solid #ffc107; padding: 15px 50px; display: flex;
+            justify-content: space-between; align-items: center; z-index: 9999;
+            box-shadow: 0 -10px 25px rgba(0,0,0,0.7);
+        }
+        .status-info { display: flex; align-items: center; gap: 20px; }
+        .btn-next-step {
+            background: #ffc107; color: #000; padding: 12px 30px; border-radius: 8px;
+            font-weight: bold; text-decoration: none; text-transform: uppercase;
+            font-size: 14px; transition: all 0.3s ease;
+        }
+        .btn-next-step:hover { background: #fff; transform: scale(1.05); }
+        .footer-spacer { height: 90px; }
+    </style>
+
+    <div class="footer-spacer"></div>
+
+    <div class="booking-sticky-bar">
+        <div class="status-info">
+            <a href="/cart" style="text-decoration: none; position: relative; display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px;">
+                <i class="fa fa-shopping-cart" aria-hidden="true" style="font-size: 24px; color: #ffc107; transition: 0.3s;"></i>
+                {% if cart_count > 0 %}
+                <span style="position: absolute; top: 5px; right: 5px; background-color: #ffc107; color: black; font-size: 11px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #000;">
+                    {{ cart_count }}
+                </span>
+                {% endif %}
+            </a>
+            <div>
+                <span style="color: #ffc107; font-weight: bold; display: block; font-size: 16px;">VÉ ĐÃ ĐƯỢC CHỌN!</span>
+                <span style="color: #aaa; font-size: 13px;">Thêm bắp nước để trải nghiệm phim trọn vẹn hơn.</span>
+            </div>
+        </div>
+
+        <a href="{{ url_for('booking.payment_page') }}" class="btn-next-step">
+            Tiếp tục thanh toán <i class="fa fa-chevron-right" style="margin-left: 8px;"></i>
+        </a>
+    </div>
+    {% endif %}
+
+    <script>
+        function addToCartSilent(event, url) {
+            event.preventDefault();
+            fetch(url)
+            .then(response => {
+                if (response.ok) {
+                    console.log("Thêm thành công!");
+                }
+            })
+            .catch(error => console.error('Lỗi:', error));
+        }
+
+        function buyNow(itemId) {
+            fetch(`/add-to-cart-and-pay/${itemId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = "/payment"; 
+                } else {
+                    alert(data.message || "Có lỗi xảy ra");
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</main>
+{% endblock %}

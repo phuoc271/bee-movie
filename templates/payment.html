@@ -1,309 +1,241 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <title>Thanh Toán - Bee Movie</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <style>
+      /* GIỮ NGUYÊN STYLE GỐC CỦA BẠN */
+      .payment-wrapper { max-width: 600px; margin: 20px auto; background: #222; padding: 30px; border-radius: 15px; border: 1px solid #333; }
+      .ticket-info-box { background: #111; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #ffc107; }
+      .method-item { display: flex; align-items: center; gap: 15px; background: #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: 0.3s; }
+      .method-item:hover { background: #444; }
+      .method-item input { transform: scale(1.2); }
+      .method-item img { width: 30px; height: 30px; }
+      #success-screen { display: none; text-align: center; }
+      .qr-code img { border: 10px solid white; border-radius: 10px; margin: 20px 0; }
+      :root { --accent-color: #ffc107; }
+      .price-row { display: flex; justify-content: space-between; margin-top: 10px; font-size: 15px; }
+      .total { font-size: 20px; font-weight: bold; color: var(--accent-color); text-align: right; margin-top: 15px; }
+      .section .title { color: var(--accent-color); font-weight: bold; margin-bottom: 10px; display: block; }
+      .item { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; }
+    </style>
   </head>
-  <body style="background-color: #1a1a1a; color: white">
+  <body style="background-color: #1a1a1a; color: white; font-family: sans-serif">
     <div class="header-space">{% include "header.html" %}</div>
-    <div class="container">
+
+    <div class="container" style="padding-top: 50px">
       <div id="payment-form" class="payment-wrapper">
-        <div class="alert alert-info text-center">
-          <h4 class="mb-0">
-            <i class="fas fa-clock"></i>
-            Thời gian giữ chỗ còn lại:
-            <span id="timer" class="font-weight-bold text-danger">03:00</span>
+        {% if show_info or cart_items %}
+        <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
+          <h4 style="margin: 0; color: #ffc107">
+            <i class="fas fa-clock"></i> Thời gian giữ chỗ: <span id="timer">03:00</span>
           </h4>
-          <small
-            >Vui lòng hoàn tất thanh toán trong thời gian này để không bị mất
-            ghế.</small
-          >
-          <button onclick="cancelBooking()" class="btn btn-secondary">
-            Hủy và chọn lại ghế
+          <button onclick="requestCancelBooking()" style="background: none; border: none; color: #aaa; text-decoration: underline; cursor: pointer; margin-top: 5px; font-size: 12px;">
+            Hủy và chọn lại
           </button>
         </div>
-        <h2
-          style="
-            color: var(--accent-color);
-            text-align: center;
-            margin-bottom: 25px;
-          "
-        >
-          XÁC NHẬN THANH TOÁN
-        </h2>
+        {% endif %}
+
+        <h2 style="color: var(--accent-color); text-align: center; margin-bottom: 25px;">XÁC NHẬN THANH TOÁN</h2>
 
         <div class="ticket-info-box">
-          <h4 style="margin: 0 0 10px 0">{{ movie_title }}</h4>
-          <p style="color: #aaa; font-size: 14px; margin: 5px 0">
-            Ghế: <span style="color: white">{{ seat_names }}</span>
-          </p>
-          Bee Mo
-          <p style="color: #aaa; font-size: 14px; margin: 5px 0">
-            Suất chiếu:
-            <span style="color: white"
-              >{{ show_date }} lúc {{ show_time }}</span
-            >
-          </p>
-          vie
-          <hr style="border: 0; border-top: 1px solid #333; margin: 10px 0" />
-          <p
-            style="
-              font-size: 18px;
-              font-weight: bold;
-              color: var(--accent-color);
-            "
-          >
-            Tổng tiền: <span id="display-total"></span> đ
-          </p>
+          {% if show_info %}
+          <div class="section">
+            <h3 style="margin-top: 0">{{ show_info.movie_title }}</h3>
+            <p style="margin: 5px 0">Ghế: {{ show_info.seat_names }}</p>
+            <p style="margin: 5px 0">Suất chiếu: {{ show_info.show_time }} | {{ show_info.show_date }}</p>
+            <p style="text-align: right; margin-bottom: 0">Tiền vé: <strong>{{ "{:,.0f}".format(ticket_total) }}đ</strong></p>
+          </div>
+          <hr style="border: 0; border-top: 1px solid #333; margin: 15px 0" />
+          {% endif %} 
+          
+          {% if cart_items %}
+          <div class="section">
+            <span class="title">BẮP NƯỚC KÈM THEO:</span>
+            {% for item in cart_items %}
+            <div class="item">
+              <span>{{ item.quantity }}x {{ item.name }}</span>
+              <span>{{ "{:,.0f}".format(item.price * item.quantity) }}đ</span>
+            </div>
+            {% endfor %}
+            <p style="text-align: right; margin-top: 10px">
+              Tiền bắp nước: <strong>{{ "{:,.0f}".format(concession_total) }}đ</strong>
+            </p>
+          </div>
+          {% endif %}
+
+          <div class="total">
+            TỔNG CỘNG: <span id="display-total-value">{{ "{:,.0f}".format(total_price) }}</span>đ
+          </div>
         </div>
 
-        <h3 style="font-size: 16px; margin-bottom: 15px">
-          Chọn phương thức thanh toán
-        </h3>
+        <h3 style="font-size: 16px; margin-bottom: 15px">Chọn phương thức thanh toán</h3>
         <div class="method-list">
           <label class="method-item">
-            <input
-              type="radio"
-              name="pay-method"
-              value="momo"
-              onchange="togglePayQR()"
-              checked
-            />
-            <img
-              src="{{ url_for('static', filename='image/momo.png') }}"
-              alt="momo"
-            />
+            <input type="radio" name="pay-method" value="momo" onchange="togglePayQR()" checked />
+            <img src="{{ url_for('static', filename='image/momo.png') }}" alt="momo" />
             <span>Ví điện tử MoMo</span>
           </label>
           <label class="method-item">
-            <input
-              type="radio"
-              name="pay-method"
-              value="vnpay"
-              onchange="togglePayQR()"
-            />
-            <i style="color: #0033cc" class="fa-solid fa-building-columns"></i>
+            <input type="radio" name="pay-method" value="vnpay" onchange="togglePayQR()" />
+            <i style="color: #0033cc; font-size: 24px" class="fa-solid fa-building-columns"></i>
             <span>Thẻ ATM / QR Ngân hàng</span>
           </label>
           <label class="method-item">
-            <input
-              type="radio"
-              name="pay-method"
-              value="cash"
-              onchange="togglePayQR()"
-            />
-            <i style="color: #006600" class="fa-solid fa-money-bill-1-wave"></i>
+            <input type="radio" name="pay-method" value="cash" onchange="togglePayQR()" />
+            <i style="color: #006600; font-size: 24px" class="fa-solid fa-money-bill-1-wave"></i>
             <span>Thanh toán tại quầy (Tiền mặt)</span>
           </label>
         </div>
-        <div
-          id="qr-payment-area"
-          style="
-            text-align: center;
-            margin: 20px 0;
-            padding: 15px;
-            background: #fff;
-            border-radius: 10px;
-            display: block;
-          "
-        >
-          <p
-            style="color: #333; font-weight: bold; margin-bottom: 10px"
-            id="qr-pay-title"
-          >
-            Quét mã MoMo để thanh toán
-          </p>
-          <img
-            id="img-pay-qr"
-            src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg"
-            width="180"
-          />
-          <p style="color: #666; font-size: 12px; margin-top: 5px">
-            (Đây là mã mô phỏng cho đồ án)
-          </p>
+
+        <div id="qr-payment-area" style="text-align: center; margin: 20px 0; padding: 15px; background: #fff; border-radius: 10px;">
+          <p style="color: #333; font-weight: bold; margin-bottom: 10px" id="qr-pay-title">Quét mã để thanh toán</p>
+          <img id="img-pay-qr" src="" width="180" />
         </div>
 
-        <button
-          id="btn-confirm"
-          onclick="handlePayment()"
-          class="btn-secondary"
-          style="
-            width: 100%;
-            padding: 15px;
-            font-size: 16px;
-            border-radius: 8px;
-          "
-        >
+        <button id="btn-confirm" onclick="handlePayment()" style="width: 100%; padding: 15px; font-size: 16px; border-radius: 8px; background: var(--accent-color); border: none; font-weight: bold; cursor: pointer; color: #000;">
           XÁC NHẬN & THANH TOÁN
         </button>
       </div>
 
       <div id="success-screen" class="payment-wrapper">
-        <i
-          class="fa-solid fa-circle-check"
-          style="font-size: 60px; color: #4caf50"
-        ></i>
+        <i class="fa-solid fa-circle-check" style="font-size: 60px; color: #4caf50"></i>
         <h2 style="color: #4caf50; margin: 15px 0">Thanh toán thành công!</h2>
-        <p style="color: #ccc">
-          Vui lòng lưu lại mã QR dưới đây để check-in tại rạp.
-        </p>
-
         <div class="qr-code" id="qr-container"></div>
-
-        <div
-          style="
-            background: #111;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 10px;
-          "
-        >
-          <p style="font-size: 13px; color: #777">Mã vé điện tử:</p>
-          <h3
-            id="ticket-id"
-            style="letter-spacing: 2px; color: var(--accent-color)"
-          >
-            BEE-123456
-          </h3>
+        <div style="background: #111; padding: 15px; border-radius: 8px">
+          <p style="font-size: 13px; color: #777">Mã đơn hàng:</p>
+          <h3 id="ticket-id" style="letter-spacing: 2px; color: var(--accent-color)"></h3>
         </div>
-
-        <button
-          onclick="window.location.href='/'"
-          class="btn-primary"
-          style="
-            margin-top: 25px;
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-          "
-        >
+        <button onclick="window.location.href = '/'" style="margin-top: 25px; width: 100%; padding: 12px; border-radius: 8px; background: #333; color: white; border: none; cursor: pointer;">
           VỀ TRANG CHỦ
         </button>
       </div>
     </div>
 
     <script>
-  const totalPrice = {{ total_price | tojson }};
-  const displayTotal = document.getElementById('display-total');
-  if (displayTotal) {
-    displayTotal.innerText = totalPrice.toLocaleString('vi-VN') + "đ";
-  }
+      const totalPrice = Number({{ total_price | tojson }}) || 0;
+      let timeLeft = Number({{ time_remaining | tojson }}) || 0;
+      {% if show_info or cart_items %}
+      
+      const countdown = setInterval(function () {
+          let min = Math.floor(timeLeft / 60);
+          let sec = timeLeft % 60;
+          const timerEl = document.getElementById('timer');
+          if(timerEl) {
+              timerEl.innerHTML = (min < 10 ? "0" : "") + min + ":" + (sec < 10 ? "0" : "") + sec;
+          }
+          
+          if (timeLeft <= 0) {
+              clearInterval(countdown);
+              requestCancelBooking(); 
+          }
+          timeLeft--; 
+      }, 1000);
+      {% endif %}
 
-  let timeLeft = 180;
-  const timerElement = document.getElementById('timer');
+      function requestCancelBooking() {
+          if (typeof countdown !== 'undefined') {
+              clearInterval(countdown);
+          }
+          
+          timeLeft = -1; 
 
-  const countdown = setInterval(function () {
-    let minutes = Math.floor(timeLeft / 60);
-    let seconds = timeLeft % 60;
-    let displayMinutes = minutes < 10 ? "0" + minutes : minutes;
-    let displaySeconds = seconds < 10 ? "0" + seconds : seconds;
-
-    if (timerElement) {
-      timerElement.innerHTML = displayMinutes + ":" + displaySeconds;
-    }
-
-    if (timeLeft <= 0) {
-      clearInterval(countdown);
-      alert("Đã hết thời gian giữ chỗ! Ghế của bạn đã được giải phóng.");
-      executeCancel();
-    }
-
-    timeLeft--;
-  }, 1000);
-
-  function handlePayment() {
-    const btn = document.getElementById('btn-confirm');
-    const method = document.querySelector('input[name="pay-method"]:checked').value;
-    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Đang xác nhận...';
-    btn.disabled = true;
-
-    fetch('/final_confirm_db', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') {
-          let methodText = "";
-          if (method === 'momo') methodText = "Ví MoMo";
-          else if (method === 'vnpay') methodText = "Ngân hàng (QR Pay)";
-          else methodText = "Tiền mặt tại quầy";
-
-          const ticketId = "BEE" + Math.floor(Math.random() * 900000 + 100000);
-          const qrData = `MÃ VÉ: ${ticketId} | PHIM: {{ movie_title }} | GHẾ: {{ seat_names }} | NGÀY: {{ show_date }} | SUẤT: {{ show_time }} | PT: ${methodText}`;
-          const qrUrl = "https://quickchart.io/qr?text=" + encodeURIComponent(qrData) + "&size=200";
-
-          document.getElementById('payment-form').style.display = 'none';
-          document.getElementById('success-screen').style.display = 'block';
-          document.getElementById('qr-container').innerHTML = `<img src="${qrUrl}" alt="QR Vé">`;
-          document.getElementById('ticket-id').innerText = ticketId;
-        } else {
-          alert("Có lỗi xảy ra: " + data.message);
-          btn.innerHTML = 'XÁC NHẬN & THANH TOÁN';
-          btn.disabled = false;
-        }
-      })
-      .catch(err => {
-        console.error("Lỗi:", err);
-        alert("Không thể kết nối với máy chủ!");
-        btn.disabled = false;
-      });
-  }
-
-  function cancelBooking() {
-    if (confirm("Bạn có chắc chắn muốn hủy giao dịch và chọn lại ghế khác?")) {
-      executeCancel();
-    }
-  }
-
-  function executeCancel() {
-    fetch('/cancel_booking', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
-    })
-      .then(() => {
-        window.location.href = "/";
-      })
-      .catch(() => {
-        window.location.href = "/";
-      });
-  }
-
-  function togglePayQR() {
-    const method = document.querySelector('input[name="pay-method"]:checked').value;
-    const qrArea = document.getElementById('qr-payment-area');
-    const qrTitle = document.getElementById('qr-pay-title');
-    const qrImg = document.getElementById('img-pay-qr');
-
-    if (!qrArea || !qrTitle || !qrImg) return;
-
-    const formattedPrice = totalPrice.toLocaleString('vi-VN') + "đ";
-
-    if (method === 'cash') {
-      qrArea.style.display = 'none';
-    } else {
-      qrArea.style.display = 'block';
-
-      if (method === 'momo') {
-        qrTitle.innerHTML = `Quét mã MoMo để thanh toán: <span style="color: #ed2d8a;">${formattedPrice}</span>`;
-        qrImg.src = "{{ url_for('static', filename='image/momo2.jpg') }}";
-      } else if (method === 'vnpay') {
-        qrTitle.innerHTML = `Chuyển khoản VietQR: <span style="color: #0033CC;">${formattedPrice}</span>`;
-        qrImg.src = `https://img.vietqr.io/image/vietinbank-113366668888-compact.jpg?amount={{ total_price }}&addInfo=Thanh toan Bee Movie`;
+          fetch("{{ url_for('booking.cancel_booking') }}", {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+          })
+          .then(res => res.json())
+          .then(data => {
+              console.log("Kết quả hủy:", data);
+              window.location.href = "/"; 
+          })
+          .catch(err => {
+              console.error("Lỗi kết nối:", err);
+          });
       }
-    }
-  }
+      window.addEventListener('beforeunload', function (e) {
+      });
+      function togglePayQR() {
+          const methodActive = document.querySelector('input[name="pay-method"]:checked');
+          if(!methodActive) return;
+          const method = methodActive.value;
+          const qrArea = document.getElementById('qr-payment-area');
+          const formattedPrice = (totalPrice || 0).toLocaleString('vi-VN') + "đ";
 
-  window.onload = togglePayQR;
-</script>
+          if (method === 'cash') {
+              qrArea.style.display = 'none';
+          } else {
+              qrArea.style.display = 'block';
+              if (method === 'momo') {
+                  document.getElementById('qr-pay-title').innerHTML = `Quét mã MoMo: <span style="color:#ed2d8a">${formattedPrice}</span>`;
+                  document.getElementById('img-pay-qr').src = "{{ url_for('static', filename='image/momo2.jpg') }}";
+              } else {
+                  document.getElementById('qr-pay-title').innerHTML = `Quét VietQR: <span style="color:#0033cc">${formattedPrice}</span>`;
+                  document.getElementById('img-pay-qr').src = `https://img.vietqr.io/image/vietinbank-113366668888-compact.jpg?amount=${totalPrice}&addInfo=BeeMovie_ThanhToan`;
+              }
+          }
+      }
 
+      function handlePayment() {
+          const btn = document.getElementById('btn-confirm');
+          const originalText = btn.innerHTML;
+          btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Đang xử lý...';
+          btn.disabled = true;
+
+          const cartData = {{ cart_items | tojson if cart_items else [] }};
+          const pMethod = document.querySelector('input[name="pay-method"]:checked').value;
+
+          fetch("{{ url_for('booking.final_confirm_db') }}", {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  cart_items: cartData,
+                  total_price: totalPrice,
+                  payment_method: pMethod  
+              })
+          })
+          .then(res => {
+              if (!res.ok) return res.json().then(err => { throw new Error(err.message || "Lỗi server"); });
+              return res.json();
+          })
+          .then(data => {
+              if(data.status === 'success') {
+                  timeLeft = -1;
+                  if (typeof countdown !== 'undefined') {
+                      clearInterval(countdown);
+                  }
+                  const realTicketCode = data.booking_id; 
+                  let qrContent = data.ticket_qr || data.food_qr || realTicketCode;
+                  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrContent)}`;
+
+                  document.getElementById('payment-form').style.display = 'none';
+                  document.getElementById('success-screen').style.display = 'block';
+                  document.getElementById('qr-container').innerHTML = `<img src="${qrUrl}" style="width:200px; border: 5px solid white;">`;
+                  document.getElementById('ticket-id').innerText = realTicketCode;
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+              } else {
+                  alert("Lỗi thanh toán: " + data.message);
+                  btn.innerHTML = originalText;
+                  btn.disabled = false;
+              }
+          })
+          .catch(err => {
+              alert("Lỗi: " + err.message);
+              btn.innerHTML = originalText;
+              btn.disabled = false;
+          });
+      }
+      window.onload = function() {
+          togglePayQR();
+          const timerEl = document.getElementById('timer');
+          if(timerEl) {
+              let min = Math.floor(timeLeft / 60);
+              let sec = timeLeft % 60;
+              timerEl.innerHTML = (min < 10 ? "0" : "") + min + ":" + (sec < 10 ? "0" : "") + sec;
+          }
+      };
+    </script>
   </body>
 </html>
