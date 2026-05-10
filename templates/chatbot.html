@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<div id="bee-chat-bubble" onclick="toggleBeeChat()">
+    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" alt="Bee AI" width="35">
+    <span class="notification-dot"></span>
+</div>
+
+<div id="bee-chat-window" class="bee-hidden">
+    <div class="bee-chat-header">
+        <div class="bee-info">
+            <div class="bee-avatar-container">
+                <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" width="30">
+                <div class="online-dot"></div>
+            </div>
+            <div>
+                <div style="font-weight: bold; color: var(--accent-color);">Bee AI Assistant</div>
+                <div style="font-size: 10px; color: #888;">Trực tuyến 24/7</div>
+            </div>
+        </div>
+        <button onclick="toggleBeeChat()" style="background:none; border:none; color:#888; cursor:pointer; font-size:20px;">&times;</button>
+    </div>
+
+    <div id="bee-chat-box">
+        <div class="msg bot">Chào Khiêm! Bee đã sẵn sàng hỗ trợ bạn về lịch chiếu và bắp nước đây! 🐝</div>
+    </div>
+
+    <div class="bee-chat-input">
+        <input type="text" id="bee-user-input" placeholder="Hỏi Bee bất cứ điều gì...">
+        <button id="bee-send-btn">
+            <i class="fas fa-paper-plane"></i> Gửi
+        </button>
+    </div>
+</div>
+
+<script>
+function toggleBeeChat() {
+    const window = document.getElementById('bee-chat-window');
+    window.classList.toggle('bee-hidden');
+    // Khi mở chat thì tự động trỏ chuột vào ô nhập liệu luôn cho tiện
+    if (!window.classList.contains('bee-hidden')) {
+        document.getElementById('bee-user-input').focus();
+    }
+}
+
+// Xử lý nhấn Enter để gửi
+document.getElementById('bee-user-input').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('bee-send-btn').click();
+    }
+});
+
+// ... (các đoạn code bên trên giữ nguyên) ...
+
+document.getElementById('bee-send-btn').addEventListener('click', async () => {
+    const input = document.getElementById('bee-user-input');
+    const box = document.getElementById('bee-chat-box');
+    if (!input.value.trim()) return;
+
+    // Tin nhắn của bạn (User)
+    box.innerHTML += `<div class="msg user">${input.value}</div>`;
+    const userMsg = input.value;
+    input.value = '';
+    box.scrollTop = box.scrollHeight;
+
+    try {
+        const res = await fetch('/ask', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: userMsg})
+        });
+
+        // Tìm đến phần nhận phản hồi từ AI trong chatbot.html
+        const data = await res.json();
+
+        // Tạo phần tử div mới cho Bot
+        const botMsgDiv = document.createElement('div');
+        botMsgDiv.className = 'msg bot';
+
+        // SỬ DỤNG LỆNH REPLACE ĐỂ XÓA DẤU **
+        // / \*\* /g là tìm tất cả các cặp dấu sao, '' là thay thế bằng rỗng
+        const cleanReply = data.reply.replace(/\*\*/g, '');
+
+        botMsgDiv.innerText = cleanReply; 
+
+        box.appendChild(botMsgDiv);
+        scrollToBottom();
+
+    } catch (error) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'msg bot';
+        errorDiv.innerText = "Lỗi kết nối rồi Khiêm ơi!";
+        box.appendChild(errorDiv);
+    }
+    
+    // Cuộn xuống cuối cùng sau khi bot trả lời
+    box.scrollTop = box.scrollHeight;
+});
+// Thêm vào trong script hiện tại của bạn
+const box = document.getElementById('bee-chat-box');
+
+// Hàm cuộn mượt
+function scrollToBottom() {
+    box.scrollTo({
+        top: box.scrollHeight,
+        behavior: 'smooth'
+    });
+}
+</script>
+
+</html>

@@ -1521,3 +1521,135 @@ a.reply:hover { color: var(--accent-color) !important; }
     .movies-container { grid-template-columns: 1fr; }
     .movie-grid { grid-template-columns: 1fr; padding: 15px; }
 }
+/* Bong bóng chat tròn */
+#chat-bubble {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background: var(--accent-color, #ffc107);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: black;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+    z-index: 9999;
+    transition: all 0.3s ease;
+}
+
+#chat-bubble:hover { transform: scale(1.1) rotate(5deg); }
+
+/* Badge AI nhỏ trên bong bóng */
+#chat-bubble .badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: red;
+    color: white;
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 10px;
+}
+
+/* Bong bóng tròn góc phải */
+#bee-chat-bubble {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    background: #ffc107; /* Màu vàng Gold của Bee Movie */
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    z-index: 10000;
+    transition: transform 0.3s;
+}
+
+#bee-chat-bubble:hover { transform: scale(1.1); }
+
+/* Cửa sổ Chat */
+#bee-chat-window {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 350px;
+    height: 450px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    z-index: 10000;
+    overflow: hidden;
+    transition: 0.3s;
+}
+
+.bee-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+}
+
+.bee-chat-header {
+    background: #222;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    color: #ffc107;
+    border-bottom: 1px solid #333;
+}
+
+#bee-chat-box {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Tìm đến đoạn này trong style.css và cập nhật */
+.msg {
+    padding: 8px 12px;
+    border-radius: 10px;
+    max-width: 80%;
+    font-size: 14px;
+    white-space: pre-line; 
+    word-wrap: break-word;
+}
+
+.msg.bot { background: #333; color: #fff; align-self: flex-start; }
+.msg.user { background: #ffc107; color: #000; align-self: flex-end; }
+
+.bee-chat-input {
+    padding: 10px;
+    display: flex;
+    gap: 5px;
+    background: #222;
+}
+
+.bee-chat-input input {
+    flex: 1;
+    background: #333;
+    border: none;
+    color: #fff;
+    padding: 8px;
+    border-radius: 5px;
+}
+
+.bee-chat-input button {
+    background: #ffc107;
+    border: none;
+    padding: 5px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
