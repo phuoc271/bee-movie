@@ -17,7 +17,7 @@
 
         <div class="movie-info">
             <div class="row">
-                <div class="col-md-6 poster" id="movie-poster" style="position: relative;"> 
+                <div class="col-md-6 poster" style="width: 50%;" id="movie-poster" style="position: relative;"> 
                     {% if movie.poster_url %}
                         <img style="width: 100%; height: auto;" src="{{ movie.poster_url }}" alt="Poster phim {{ movie.title }}" class="img-fluid">
                     {% else %}
@@ -93,6 +93,7 @@
 
                     </div>
                 </div>
+                <div class="col-md-12">
                     <p><strong>Thời lượng :</strong> {{ movie.runtime }} phút</p>
                     <p><strong>Thể loại :</strong> 
                         {% if movie.genres %}
@@ -330,7 +331,7 @@
 </div>
 </main>
 
-<div id="trailerModal" class="modal">
+<div id="trailerModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close-button" onclick="closeTrailerModal()">&times;</span>
         <iframe 
@@ -410,6 +411,7 @@
         });
     }
 </script>
+
 {% endblock %}
 
 {% block custom_js %}

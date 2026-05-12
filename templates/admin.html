@@ -14,7 +14,7 @@
         body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
         /* Sidebar */
-        .sidebar { height: 100vh; background: var(--bee-black); border-right: 2px solid var(--bee-yellow); position: fixed; width: 260px; transition: all 0.3s; z-index: 1000; }
+        .sidebar { height: 100vh; background: var(--bee-black); border-right: 2px solid var(--bee-yellow); position: fixed; width: 260px; transition: all 0.3s; z-index: 1000 !important; }
         .nav-link { color: #888 !important; padding: 12px 20px; border-radius: 5px; margin: 5px 10px; transition: 0.3s; border: none; background: none; width: calc(100% - 20px); text-align: left; }
         .nav-link:hover { background: #222; color: var(--bee-yellow); }
         .nav-link.active { background: var(--bee-yellow) !important; color: #000 !important; font-weight: bold; }
@@ -38,6 +38,17 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--bee-yellow); }
+        .table-hover tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            transform: scale(1.01);
+        }
+        .badge.rounded-circle {
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -166,7 +177,7 @@
             </div>
 
             <div class="row mt-5">
-                <div class="col-md-7">
+                <div class="col-md-6">
                     <h4 class="text-white-50 mb-3"><i class="fas fa-exchange-alt me-2"></i>Dòng tiền giao dịch gần đây</h4>
                     <div class="card-stats p-0">
                         <table class="table table-dark table-hover mb-0 small">
@@ -198,15 +209,51 @@
                     </div>
                 </div>
 
-                <div class="col-md-5">
-                    <h4 class="text-white-50 mb-3"><i class="fas fa-star me-2"></i>Top phim đánh giá</h4>
-                    <div class="card-stats p-0">
-                        <table class="table table-dark mb-0">
+                <div class="col-md-6">
+                    <h4 class="text-white-50 mb-3">
+                        <i class="fas fa-trophy me-2 text-warning"></i>Top Rate Phim Bán Chạy
+                    </h4>
+                    <div class="card-stats p-0 shadow-lg" style="background: rgba(255,255,255,0.05); border-radius: 15px; overflow: hidden;">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr style="background: rgba(0,0,0,0.3);">
+                                    <th class="ps-3 py-3 border-0" style="width: 15%">Hạng</th>
+                                    <th class="py-3 border-0">Tên phim</th>
+                                    <th class="text-end pe-3 py-3 border-0">Số ghế bán ra</th>
+                                </tr>
+                            </thead>
                             <tbody>
-                                {% for m in top_movies %}
-                                <tr>
-                                    <td class="movie-name py-3" data-id="{{ m.movie_id }}">Phim #{{ m.movie_id }}</td>
-                                    <td class="text-end"><span class="text-warning fw-bold">{{ "%.1f"|format(m.avg_score) }}</span></td>
+                                {% for movie in top_selling_movies %}
+                                <tr style="transition: all 0.3s;">
+                                    <td class="ps-3 py-3 border-secondary align-middle">
+                                        {% if loop.index == 1 %}
+                                            <span class="badge bg-danger rounded-circle p-2 shadow">01</span>
+                                        {% elif loop.index == 2 %}
+                                            <span class="badge bg-warning text-dark rounded-circle p-2 shadow">02</span>
+                                        {% elif loop.index == 3 %}
+                                            <span class="badge bg-info rounded-circle p-2 shadow">03</span>
+                                        {% else %}
+                                            <span class="text-white-50 ps-2">{{ "%02d"|format(loop.index) }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 border-secondary align-middle">
+                                        <div class="d-flex align-items-center">
+                                            {% if movie.poster %}
+                                            <img src="{{ movie.poster }}" alt="poster" class="rounded me-2" style="width: 35px; height: 50px; object-fit: cover;">
+                                            {% endif %}
+                                            <div class="text-truncate">
+                                                <strong class="text-white d-block">{{ movie.title }}</strong>
+                                                <small class="text-success" style="font-size: 0.85rem; font-weight: bolder;">
+                                                    Doanh thu vé: {{ "{:,.0f}".format(movie.revenue) }}đ
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end pe-3 py-3 border-secondary align-middle">
+                                        <span class="badge bg-primary-subtle text-primary fw-bold" style="font-size: 0.9rem;" title="Số ghế đã bán">
+                                            <i class="fas fa-chair me-1"></i>{{ movie.seats }}
+                                        </span>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -295,7 +342,7 @@
             {% endfor %}
         </div>
     </div>
-        <div class="modal fade" id="addShowtimeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" style="display: none;" id="addShowtimeModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content bg-dark border-warning text-white">
                     <form id="showtimeForm" action="{{ url_for('admin.add_showtime') }}" method="POST">
@@ -517,7 +564,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="concessionModal" tabindex="-1">
+    <div class="modal fade" style="display: none;" id="concessionModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content bg-dark text-white border-secondary">
                 <form action="{{ url_for('admin.save_concession') }}" method="POST">
@@ -570,8 +617,10 @@
                     <small >{{ c.date_commented.strftime('%H:%M %d/%m/%Y') }}</small>
                 </div>
                 <p class="mt-2 mb-0">{{ c.content }}</p>
-                <div class="text-end">
-                    <button class="btn btn-sm text-danger"><i class="fas fa-trash"></i> Xóa</button>
+                <div class="text-end" id="comment-block-{{ c.id }}">
+                    <button class="btn btn-sm text-danger" onclick="deleteComment('{{ c.id }}')">
+                        <i class="fas fa-trash"></i> Xóa
+                    </button>
                 </div>
             </div>
             {% endfor %}
@@ -835,8 +884,8 @@
                                         <div class="mb-2">
                                             <label class="small text-white-50">Movie ID</label>
                                             <div class="input-group">
-                                                <input type="text" name="movie_id" id="target-movie-id" 
-                                                    class="form-control form-control-sm bg-dark text-warning font-monospace" required>
+                                                <input type="text" placeholder="Chỉ Nhập Số" name="movie_id" id="target-movie-id" 
+                                                    class="form-control form-control-sm bg-secondary text-white border-0" required>
                                                 <button class="btn btn-outline-warning btn-sm" type="button" onclick="generateMovieID()">
                                                     Tạo mã mới
                                                 </button>
@@ -887,8 +936,38 @@
                                             <input type="text" name="director" id="target-director" class="form-control form-control-sm bg-secondary text-white border-0">
                                         </div>
                                         <div class="mb-2">
-                                            <label class="small text-white-50">Thể loại (ngăn cách bởi dấu phẩy)</label>
-                                            <input type="text" name="genres" id="target-genres" class="form-control form-control-sm bg-secondary text-white border-0" placeholder="Hành Động, Hài">
+                                            <label class="small text-white-50">Thể loại (Ngăn cách bởi dấu phẩy)</label>
+                                            <div class="input-group">
+                                                <!-- Ô input này sẽ chứa kết quả cuối cùng để gửi lên Server -->
+                                                <input type="text" name="genres" id="target-genres" 
+                                                    class="form-control form-control-sm bg-secondary text-white border-0" 
+                                                    placeholder="Hành động, Hài hước..." value="">
+                                                
+                                                <!-- Thẻ select này chỉ dùng để "bấm chọn cho nhanh" -->
+                                                <select class="form-control form-control-sm bg-dark text-white border-0" 
+                                                        style="max-width: 40px;" 
+                                                        onchange="addGenre(this)">
+                                                    <option value="" selected disabled>+</option>
+                                                    <option value="Hành động">Hành động</option>
+                                                    <option value="Phiêu lưu">Phiêu lưu</option>
+                                                    <option value="Hoạt hình">Hoạt hình</option>
+                                                    <option value="Hài">Hài hước</option>
+                                                    <option value="Hình sự">Hình sự</option>
+                                                    <option value="Kinh dị">Kinh dị</option>
+                                                    <option value="Tình cảm">Tình cảm</option>
+                                                    <option value="Khoa học viễn tưởng">Khoa học viễn tưởng</option>
+                                                    <option value="Bí ẩn">Bí ẩn</option>
+                                                    <option value="Gây cấn">Gây cấn</option>
+                                                    <option value="Chính kịch">Chính kịch</option>
+                                                    <option value="Giả tưởng">Giả tưởng</option>
+                                                    <option value="Gia đình">Gia đình</option>
+                                                    <option value="Tài liệu">Tài liệu</option>
+                                                    <option value="Lịch sử">Lịch sử</option>
+                                                    <option value="Nhạc">Nhạc</option>
+                                                    <option value="Chiến tranh">Chiến tranh</option>
+                                                    <option value="Miền Tây">Miền Viễn Tây</option>
+                                                </select>
+                                            </div>
                                         </div>
                                         <div class="mb-2">
                                             <label class="small text-white-50">Diễn viên (ngăn cách bởi dấu phẩy)</label>
@@ -915,7 +994,6 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const TMDB_KEY = "{{ tmdb_key }}";
     const IMG_PATH = "https://image.tmdb.org/t/p/w500";
@@ -964,27 +1042,44 @@
         if (e.key === 'Enter') { e.preventDefault(); btnSearch.click(); }
     });
 
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('.movie-name').forEach(async el => {
+    document.addEventListener('DOMContentLoaded', async () => {
+        const movieElements = document.querySelectorAll('.movie-name');
+        const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
+        for (const el of movieElements) {
             const mid = el.getAttribute('data-id');
-            if (mid && mid !== 'None') {
-                const data = await callTMDB(`/movie/${mid}`);
-                
-                if (data && data.title) {
-                    el.innerText = data.title;
-                } else {
-                    try {
-                        const response = await fetch(`/admin/get-movie-extra/${mid}`);
+            if (!mid || mid === 'None' || mid.trim() === "") continue;
+
+            const midStr = String(mid).trim();
+            if (el.innerText.length > 20) continue; 
+
+            try {
+                if (midStr.length > 10) {
+                    const response = await fetch(`/admin/get-movie-extra/${midStr}`);
+                    if (response.ok) {
                         const localData = await response.json();
-                        if (localData.exists || localData.title) {
-                            el.innerText = localData.title || localData.name;
+                        if (localData.exists && localData.title) {
+                            el.innerText = localData.title;
                         }
-                    } catch (err) {
-                        console.error("Lỗi lấy phim nội bộ:", err);
                     }
+                } 
+                else {
+                    const data = await callTMDB(`/movie/${midStr}`);
+                    if (data && data.title) {
+                        el.innerText = data.title;
+                    } else {
+                        const response = await fetch(`/admin/get-movie-extra/${midStr}`);
+                        const localData = await response.json();
+                        if (localData.exists && localData.title) {
+                            el.innerText = localData.title;
+                        }
+                    }
+                    await delay(100);
                 }
+            } catch (err) {
+                console.warn(`Không lấy được tên cho phim ${midStr}`);
             }
-        });
+        }
     });
 
     async function selectMovie(movie) {
@@ -1914,6 +2009,60 @@
             .catch(err => {
                 console.error("Lỗi fetch nội bộ:", err);
             });
+    }
+    function addGenre(selectElement) {
+        const genreInput = document.getElementById('target-genres');
+        const selectedValue = selectElement.value;
+        
+        if (selectedValue) {
+            if (genreInput.value.length > 0) {
+                if (!genreInput.value.includes(selectedValue)) {
+                    genreInput.value += ", " + selectedValue;
+                }
+            } else {
+                genreInput.value = selectedValue;
+            }
+        }
+        selectElement.selectedIndex = 0;
+    }
+    function deleteComment(commentId) {
+        if (!commentId) return;
+        if (!confirm("Ông có chắc muốn xóa bình luận này không?")) return;
+
+        fetch(`/admin/delete-comment/${commentId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error("Server trả về lỗi hoặc bạn chưa đăng nhập (404/500/401)");
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                const commentBlock = document.getElementById(`comment-block-${commentId}`);
+                if (commentBlock) {
+                    const commentCard = commentBlock.closest('.card-stats');
+                    if (commentCard) {
+                        commentCard.style.transition = 'all 0.3s ease';
+                        commentCard.style.opacity = '0';
+                        commentCard.style.transform = 'translateX(20px)';
+                        setTimeout(() => commentCard.remove(), 300);
+                    }
+                } else {
+                    location.reload();
+                }
+            } else {
+                alert("Lỗi từ hệ thống: " + data.message);
+            }
+        })
+        .catch(err => {
+            console.error("Lỗi:", err);
+            alert("Có lỗi xảy ra: " + err.message);
+        });
     }
 </script>
 </body>

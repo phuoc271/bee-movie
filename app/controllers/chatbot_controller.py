@@ -2,10 +2,18 @@ import os
 import random
 import requests
 from flask import Blueprint, render_template, request, jsonify, current_app
-from app.extensions import db # Đảm bảo đã import db
-# Khởi tạo Blueprint
+from app.extensions import db 
+from app.models import Showtime, MovieExtra 
+from app.utils.tmdb import fetch_movies_list
+from datetime import datetime, timedelta
+from sqlalchemy import text
+
 chatbot_bp = Blueprint('chatbot', __name__)
 
+MOVIE_DATA_CACHE = {
+    "content": "",
+    "last_updated": None
+}
 def get_gemini_keys():
     """Lấy danh sách Gemini Keys từ .env"""
     keys_str = os.getenv("GEMINI_API_KEY", "")
@@ -35,14 +43,12 @@ def call_gemini_api(prompt):
 def search_concessions_db(keyword):
     """Tìm kiếm bắp nước trong Database dựa trên từ khóa"""
     try:
-        # Câu lệnh SQL tìm kiếm theo tên hoặc mô tả
         sql = "SELECT name, price, description FROM concessions WHERE name LIKE :kw OR description LIKE :kw"
         result = db.session.execute(db.text(sql), {"kw": f"%{keyword}%"}).fetchall()
         
         if not result:
             return None
             
-        # Chuyển kết quả thành văn bản để gửi cho AI
         info = "Dữ liệu tìm thấy trong kho:\n"
         for row in result:
             info += f"- {row[0]}: {row[1]:,.0f}đ ({row[2]})\n"
@@ -58,31 +64,65 @@ def chatbot_page():
 
 @chatbot_bp.route('/ask', methods=['POST'])
 def ask():
-    user_message = request.json.get('message').lower()
+    user_message = request.json.get('message', '').strip()
+    msg_lower = user_message.lower()
     
-    # 1. Thử tìm kiếm nhanh trong Database (Ví dụ khách hỏi "bắp", "pepsi", "combo")
-    search_result = ""
-    keywords = ["bắp", "nước", "combo", "pepsi", "ly", "box", "quà"]
-    if any(k in user_message for k in keywords):
-        # Lấy từ khóa chính để tìm (ví dụ khách hỏi "muốn mua bắp" -> tìm "bắp")
-        found_kw = next((k for k in keywords if k in user_message), "")
-        search_result = search_concessions_db(found_kw)
+    if msg_lower in ['hi', 'hello', 'alo', 'chào', 'chào bạn']:
+        return jsonify({'reply': "Chào bạn! Bee Movie có thể giúp gì cho bạn về lịch chiếu, giá vé hay bắp nước?"})
 
-    # 2. Xây dựng Prompt thông minh
+    current_movies = get_current_movies_from_db() if any(k in msg_lower for k in ["phim", "chiếu", "lịch", "giờ", "xem"]) else ""
+    search_result = search_concessions_db(msg_lower) if any(k in msg_lower for k in ["bắp", "nước", "combo", "ăn", "uống"]) else ""
+    
     prompt = f"""
-    Bạn là Bee AI - Trợ lý rạp Bee Movie.
-    Dữ liệu thực tế từ kho hàng:
-    {search_result if search_result else "Không tìm thấy sản phẩm cụ thể, hãy trả lời dựa trên kiến thức chung về rạp phim."}
+    Bạn là Bee AI. Nhiệm vụ: Trả lời CỰC KỲ NGẮN GỌN và TRỰC TIẾP. Không chào hỏi thừa thãi.
+    Dữ liệu:
+    - Lịch chiếu: {current_movies}
+    - Bắp nước: {search_result}
+    - Giá vé: 65k-95k (HSSV 55k).
     
-    Giá vé mặc định: 110k (thường), 130k (lễ), HSSV 80k.
-    
-    Yêu cầu: 
-    - Nếu khách hỏi giá bắp nước, hãy dùng dữ liệu thực tế ở trên để báo giá.
-    - Trả lời ngắn gọn, thân thiện.
-    - Câu hỏi của khách: '{user_message}'
+    Khách hỏi: {user_message}
+    Quy tắc:
+    - Nếu khách hỏi phim, chỉ liệt kê phim .
+    - Nếu khách hỏi suất chiếu , thì hỏi ngày cụ thể , sau khi cung cấp ngày thì liệt kê suất chiếu và phim đó ra.
+    - Nếu không có thông tin trong dữ liệu, bảo là 'Dạ rạp hiện chưa có thông tin này'.
+    - Không lặp lại câu hỏi của khách.
     """
     
-    ai_reply = call_gemini_api(prompt)
+    return jsonify({'reply': call_gemini_api(prompt)})
+
+MOVIE_CACHE = {
+    "content": "",
+    "last_updated": None
+}
+def get_current_movies_from_db():
+    global MOVIE_CACHE
+    now = datetime.now()
     
-    # Giữ nguyên phần xử lý TMDB và Quota phía dưới...
-    return jsonify({'reply': ai_reply})
+    if MOVIE_CACHE["last_updated"] and now < MOVIE_CACHE["last_updated"] + timedelta(minutes=10):
+        return MOVIE_CACHE["content"]
+
+    try:
+        sql = text("SELECT movie_id, start_time FROM showtimes WHERE start_time >= :now ORDER BY start_time ASC")
+        results = db.session.execute(sql, {"now": now}).fetchall()
+        if not results: return "Rạp hiện chưa có lịch chiếu mới."
+
+        movie_times = {}
+        for row in results:
+            m_id = str(row[0])
+            t_str = row[1].strftime("%H:%M")
+            movie_times.setdefault(m_id, []).append(t_str)
+
+        all_now_playing = fetch_movies_list("movie/now_playing", params={"language": "vi-VN", "region": "VN"})
+        tmdb_dict = {str(m.get("id")): m.get("title") for m in all_now_playing}
+        
+        final_list = []
+        for m_id, times in movie_times.items():
+            title = tmdb_dict.get(m_id) or (MovieExtra.query.get(m_id).title if MovieExtra.query.get(m_id) else f"Phim {m_id}")
+            final_list.append(f"- {title}: {', '.join(times)}")
+
+        res_text = "\n".join(final_list)
+        MOVIE_CACHE.update({"content": res_text, "last_updated": now})
+        return res_text
+    except Exception as e:
+        print(f"Lỗi: {e}")
+        return MOVIE_CACHE["content"] or "Đang cập nhật lịch..."

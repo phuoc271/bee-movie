@@ -1,12 +1,15 @@
 from flask import Blueprint, render_template, request, jsonify, session, flash, redirect, url_for, current_app
 from datetime import datetime, timedelta
-from app.models import Comment, Rating, User, Showtime, Cinema, Room, Concession, MovieExtra
+from app.models import Comment, Rating, User, Showtime, Cinema, Room, Concession, MovieExtra, Booking
 from app.extensions import db, cache
 from app.utils.tmdb import fetch_from_tmdb, fetch_movies_list
 import google.generativeai as genai
-import json, os, re
 from dotenv import load_dotenv
 from sqlalchemy import func
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from flask_login import current_user
+import json, os, re, pandas as pd
 
 movie_bp = Blueprint('movie', __name__)
 
@@ -61,44 +64,60 @@ def home():
     current_movies_list = []
     featured_movies_list = []
     upcoming_list = []
-
+    
     for movie in now_playing_movies_data:
         movie_id = movie.get("id")
         extra = MovieExtra.query.get(str(movie_id))
-        
+        tmdb_path = movie.get('poster_path')
+
         if extra and extra.poster_url:
-            custom_poster = extra.poster_url
+            if extra.poster_url.startswith('http'):
+                custom_poster = extra.poster_url
+            else:
+                path = extra.poster_url if extra.poster_url.startswith('/') else f"/{extra.poster_url}"
+                custom_poster = f"https://image.tmdb.org/t/p/w500{path}"
+        elif tmdb_path:
+            custom_poster = f"https://image.tmdb.org/t/p/w500{tmdb_path}"        
         else:
-            custom_poster = f"{current_app.config['TMDB_IMAGE_BASE_URL']}{movie.get('poster_path')}" if movie.get('poster_path') else None
-        genre_names = get_genre_names(movie.get("genre_ids", []), genre_map)
-        local_ratings = Rating.query.filter_by(movie_id=movie_id).all()
+            custom_poster = url_for('static', filename='image/404.jpg')
+        raw_genres = get_genre_names(movie.get("genre_ids", []), genre_map)
+        full_str = ", ".join(raw_genres) if isinstance(raw_genres, list) else str(raw_genres)
+        clean_str = full_str.replace("/", ",").replace("Phim ", "").replace("phim ", "").strip()
+        genre_names = [g.strip() for g in clean_str.split(',') if g.strip()] or ["Khác"]
+
+        local_ratings = Rating.query.filter_by(movie_id=str(movie.get("id"))).all()
         local_sum = sum(r.score for r in local_ratings)
         local_count = len(local_ratings)
 
         user_avg_ratings = db.session.query(
             func.avg(Comment.final_rating).label('avg_score')
         ).filter(
-            Comment.story_id == movie_id, 
+            Comment.story_id == movie.get("id"), 
             Comment.final_rating > 0,
             Comment.content != ""
         ).group_by(Comment.user_id).all()
 
         ai_sum = sum(r.avg_score for r in user_avg_ratings)
         ai_count = len(user_avg_ratings)
+        
         tmdb_score = movie.get("vote_average", 0)
         tmdb_count = movie.get("vote_count", 0)
+        
         total_votes = tmdb_count + local_count + ai_count
-        combined_average = 0
         if total_votes > 0:
             combined_average = ((tmdb_score * tmdb_count) + local_sum + ai_sum) / total_votes
+        else:
+            combined_average = tmdb_score
         movie_info = {
             "id": movie.get("id"),
             "title": movie.get("title"),
-            "release_date": movie.get("release_date"),
-            "overview": movie.get("overview"),
             "genre": genre_names,
             "vote_average": round(combined_average, 1),
+            "release_date": movie.get("release_date"),
+            "tmdb_score": tmdb_score, 
+            "tmdb_count": tmdb_count, 
             "poster_url": custom_poster,
+            "overview": movie.get("overview"),
             "backdrop_url": f"{current_app.config['TMDB_BACKDROP_BASE_URL']}{movie.get('backdrop_path')}" if movie.get('backdrop_path') else None,
         }
         current_movies_list.append(movie_info)
@@ -108,12 +127,24 @@ def home():
     for movie in upcoming_data:
         movie_id = movie.get("id")
         extra = MovieExtra.query.get(str(movie_id))
-        
+        tmdb_path = movie.get('poster_path')
+
         if extra and extra.poster_url:
-            custom_poster = extra.poster_url
+            if extra.poster_url.startswith('http'):
+                custom_poster = extra.poster_url
+            else:
+                path = extra.poster_url if extra.poster_url.startswith('/') else f"/{extra.poster_url}"
+                custom_poster = f"https://image.tmdb.org/t/p/w500{path}"
+        elif tmdb_path:
+            custom_poster = f"https://image.tmdb.org/t/p/w500{tmdb_path}"        
         else:
-            custom_poster = f"{current_app.config['TMDB_IMAGE_BASE_URL']}{movie.get('poster_path')}" if movie.get('poster_path') else None
-        genre_names = get_genre_names(movie.get("genre_ids", []), genre_map)
+            custom_poster = url_for('static', filename='image/404.jpg')
+            
+        raw_genres = get_genre_names(movie.get("genre_ids", []), genre_map)
+        full_str = ", ".join(raw_genres) if isinstance(raw_genres, list) else str(raw_genres)
+        clean_str = full_str.replace("/", ",").replace("Phim ", "").replace("phim ", "").strip()
+        genre_names = [g.strip() for g in clean_str.split(',') if g.strip()] or ["Khác"]
+
         local_ratings = Rating.query.filter_by(movie_id=movie_id).all()
         local_sum = sum(r.score for r in local_ratings)
         local_count = len(local_ratings)
@@ -131,7 +162,7 @@ def home():
         tmdb_score = movie.get("vote_average", 0)
         tmdb_count = movie.get("vote_count", 0)
         total_votes = tmdb_count + local_count + ai_count
-        combined_average = 0
+        combined_average = tmdb_score
         if total_votes > 0:
             combined_average = ((tmdb_score * tmdb_count) + local_sum + ai_sum) / total_votes
         movie_info = {
@@ -146,10 +177,40 @@ def home():
         }
         upcoming_list.append(movie_info)
 
+    recommended_list = []
+    
+    if current_user.is_authenticated:
+            active_showtime_ids = db.session.query(Showtime.movie_id).distinct().all()
+            active_ids = [str(s[0]) for s in active_showtime_ids]
+
+            all_movies = current_movies_list + upcoming_list
+            existing_ids = {str(m['id']) for m in all_movies}
+
+            for mid in active_ids:
+                if mid not in existing_ids:
+                    extra = MovieExtra.query.get(mid)
+                    if extra:
+                        if extra.genres:
+                            clean_genres = [g.strip() for g in extra.genres.replace("Phim ", "").split(',')]
+                        else:
+                            clean_genres = ["Khác"]
+                        
+                        all_movies.append({
+                            "id": mid,
+                            "title": extra.title,
+                            "genre": clean_genres, 
+                            "vote_average": 0.0,
+                            "poster_url": extra.poster_url,
+                            "overview": extra.overview or ""
+                        })
+
+            movies_with_schedules = [m for m in all_movies if str(m['id']) in active_ids]
+            recommended_list = get_personalized_recommendations(current_user.id, movies_with_schedules)
     return render_template('home.html',
                             movies=current_movies_list[:8],
                             featured_movies=featured_movies_list,
-                            upcoming=upcoming_list)
+                            upcoming=upcoming_list,
+                            recommended_movies=recommended_list)
 
 @movie_bp.route("/now-playing")
 def now_playing():
@@ -172,7 +233,15 @@ def now_playing():
             title = movie.get("title")
             desc = movie.get("overview")
             genre_names = get_genre_names(movie.get("genre_ids", []), genre_map)
-            img = f"https://image.tmdb.org/t/p/w500{movie.get('poster_path')}" if movie.get('poster_path') else "placeholder_url"
+            poster_path = movie.get('poster_path')
+            if poster_path:
+                if poster_path.startswith('http'):
+                    img = poster_path
+                else:
+                    clean_path = poster_path if poster_path.startswith('/') else f"/{poster_path}"
+                    img = f"https://image.tmdb.org/t/p/w500{clean_path}"
+            else:
+                img = "https://via.placeholder.com/500x750?text=No+Poster"
             tmdb_score = movie.get("vote_average", 0)
             tmdb_count = movie.get("vote_count", 0)
         else:
@@ -182,7 +251,14 @@ def now_playing():
             title = extra.title
             desc = extra.overview or "Không có mô tả."
             genre_names = [extra.genres] if extra.genres else ["Khác"]
-            img = extra.poster_url or "placeholder_url"
+            if extra.poster_url:
+                if extra.poster_url.startswith('http'):
+                    img = extra.poster_url
+                else:
+                    clean_path = extra.poster_url if extra.poster_url.startswith('/') else f"/{extra.poster_url}"
+                    img = f"https://image.tmdb.org/t/p/w500{clean_path}"
+            else:
+                img = "https://via.placeholder.com/500x750?text=No+Poster"
             tmdb_score = 0
             tmdb_count = 0
 
@@ -221,9 +297,15 @@ def upcoming():
         extra = MovieExtra.query.get(str(movie_id))
         
         if extra and extra.poster_url:
-            img_url = extra.poster_url
+            if extra.poster_url.startswith('http'):
+                img_url = extra.poster_url
+            else:
+                path = extra.poster_url if extra.poster_url.startswith('/') else f"/{extra.poster_url}"
+                img_url = f"https://image.tmdb.org/t/p/w500{path}"
+        elif movie.get('poster_path'):
+            img_url = f"https://image.tmdb.org/t/p/w500{movie.get('poster_path')}"
         else:
-            img_url = f"https://image.tmdb.org/t/p/w500{movie.get('poster_path')}" if movie.get('poster_path') else "placeholder_url"
+            img_url = url_for('static', filename='image/404.jpg')
         genre_names = get_genre_names(movie.get("genre_ids", []), genre_map)
         local_ratings = Rating.query.filter_by(movie_id=movie_id).all()
         local_sum = sum(r.score for r in local_ratings)
@@ -294,21 +376,42 @@ def movie_detail(movie_id):
     if total_votes > 0:
         combined_average = ((tmdb_score * tmdb_count) + local_sum + ai_sum) / total_votes
     else:
-        combined_average = 0
+        combined_average = tmdb_score
+
+    if extra and extra.poster_url:
+        p_path = extra.poster_url
+        p_url = p_path if p_path.startswith('http') else f"https://image.tmdb.org/t/p/w500/{p_path.lstrip('/')}"
+    elif movie_data.get('poster_path'):
+        p_path = movie_data.get('poster_path')
+        p_url = f"https://image.tmdb.org/t/p/w500/{p_path.lstrip('/')}"
+    else:
+        p_url = url_for('static', filename='image/404.jpg')
+
+    if extra and extra.backdrop_url:
+        b_path = extra.backdrop_url
+        b_url = b_path if b_path.startswith('http') else f"https://image.tmdb.org/t/p/original/{b_path.lstrip('/')}"
+    elif movie_data.get('backdrop_path'):
+        b_path = movie_data.get('backdrop_path')
+        b_url = f"https://image.tmdb.org/t/p/original/{b_path.lstrip('/')}"
+    else:
+        b_url = None
 
     LANG_MAP = {"en": "Anh Quốc", "vi": "Việt Nam", "th": "Thái Lan", "ko": "Hàn Quốc", "ja": "Nhật Bản", "zh": "Trung Quốc"}
     raw_lang = extra.original_language if (extra and extra.original_language) else movie_data.get("original_language")
+
+    raw_genres = extra.genres.split(",") if (extra and extra.genres) else [g["name"] for g in movie_data.get("genres", [])]
+    clean_genres = [g.replace("Phim ", "").strip() for g in raw_genres]
     details = {
         "title": extra.title if (extra and extra.title) else movie_data.get("title", "Phim chưa có tên"),
         "release_date": extra.release_date if (extra and extra.release_date) else movie_data.get("release_date", "N/A"),
         "overview": extra.overview if (extra and extra.overview) else movie_data.get("overview", "Đang cập nhật nội dung..."),
-        "poster_url": extra.poster_url if (extra and extra.poster_url) else (f"{current_app.config['TMDB_IMAGE_BASE_URL']}{movie_data.get('poster_path')}" if movie_data.get('poster_path') else url_for('static', filename='img/default_poster.jpg')),
-        "backdrop_url": extra.backdrop_url if (extra and extra.backdrop_url) else (f"{current_app.config['TMDB_BACKDROP_BASE_URL']}{movie_data.get('backdrop_path')}" if movie_data.get('backdrop_path') else None),
+        "poster_url": p_url,
+        "backdrop_url": b_url,
         "original_language": LANG_MAP.get(raw_lang, raw_lang if raw_lang else "Không xác định"),
         "runtime": extra.runtime if (extra and extra.runtime) else movie_data.get("runtime", 0),
         "director": extra.director if (extra and extra.director) else next((c["name"] for c in movie_data.get("credits", {}).get("crew", []) if c.get("job") == "Director"), "Đang cập nhật"),
         "cast": extra.cast.split(",") if (extra and extra.cast) else [c["name"] for c in movie_data.get("credits", {}).get("cast", [])[:10]],
-        "genres": extra.genres.split(",") if (extra and extra.genres) else [g["name"] for g in movie_data.get("genres", [])],
+        "genres": clean_genres,
         "vote_average": round(combined_average, 1),
         "vote_count": total_votes,
         "ai_score": round(ai_overall_score, 1),
@@ -364,9 +467,97 @@ def movie_detail(movie_id):
                         grouped_showtimes=grouped_showtimes,
                         has_showtimes=has_real_showtimes)
 
-@movie_bp.route("/all-movies")
+@movie_bp.route('/phim')
 def all_movies():
-    return render_template("all-movies.html")
+    genre_map = fetch_genres()
+    now = datetime.now()
+    
+    active_showtimes = db.session.query(Showtime.movie_id).filter(
+        Showtime.start_time >= now
+    ).distinct().all()
+    active_ids = [str(s[0]) for s in active_showtimes]
+
+    now_playing_raw = fetch_list_cached("movie/now_playing", page=1, language="vi-VN", region="VN")
+    upcoming_raw = fetch_list_cached("movie/upcoming", page=1, language="vi-VN", region="VN")
+    
+    tmdb_dict = {str(m.get("id")): m for m in now_playing_raw + upcoming_raw}
+
+    def process_with_extra(movie_id):
+        movie = tmdb_dict.get(str(movie_id))
+        
+        tmdb_score = 0
+        tmdb_count = 0
+        title = "Chưa có tiêu đề"
+        desc = "Không có mô tả."
+        genre_names = ["Khác"]
+        img = "https://via.placeholder.com/500x750?text=No+Poster"
+
+        if movie:
+            title = movie.get("title")
+            desc = movie.get("overview")
+            raw_genres = get_genre_names(movie.get("genre_ids", []), genre_map)
+            full_str = ", ".join(raw_genres) if isinstance(raw_genres, list) else str(raw_genres)
+            clean_str = full_str.replace("/", ",").replace("Phim ", "").replace("phim ", "").strip()
+            
+            if clean_str:
+                genre_names = [g.strip() for g in clean_str.split(',') if g.strip()]
+            poster_path = movie.get('poster_path')
+            img = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "https://via.placeholder.com/500x750?text=No+Poster"
+            tmdb_score = movie.get("vote_average", 0)
+            tmdb_count = movie.get("vote_count", 0)
+        else:
+            extra = MovieExtra.query.get(str(movie_id))
+            if not extra:
+                return None
+            title = extra.title
+            desc = extra.overview or "Không có mô tả."
+            if extra.genres:
+                genre_names = [g.strip() for g in extra.genres.split(',')]
+            else:
+                genre_names = ["Khác"]
+            img = extra.poster_url if extra.poster_url else "https://via.placeholder.com/500x750?text=No+Poster"
+            tmdb_score = 0
+            tmdb_count = 0
+
+        local_ratings = Rating.query.filter_by(movie_id=str(movie_id)).all()
+        local_sum = sum(r.score for r in local_ratings)
+        local_count = len(local_ratings)
+
+        user_avg_ratings = db.session.query(func.avg(Comment.final_rating)).filter(
+            Comment.story_id == str(movie_id), 
+            Comment.final_rating > 0, 
+            Comment.content != ""
+        ).group_by(Comment.user_id).all()
+
+        ai_sum = sum(r[0] for r in user_avg_ratings if r[0] is not None)
+        ai_count = len(user_avg_ratings)
+
+        total_votes = tmdb_count + local_count + ai_count
+        combined_average = ((tmdb_score * tmdb_count) + local_sum + ai_sum) / total_votes if total_votes > 0 else 0
+
+        return {
+            "id": movie_id,
+            "title": title,
+            "genre": genre_names,
+            "desc": desc,
+            "vote_average": round(float(combined_average), 1),
+            "img": img
+        }
+
+    movies_data_from_server = []
+    for mid in active_ids:
+        p = process_with_extra(mid)
+        if p: movies_data_from_server.append(p)
+    
+    upcoming_data_from_server = []
+    for m in upcoming_raw:
+        p = process_with_extra(m.get("id"))
+        if p: upcoming_data_from_server.append(p)
+
+    return render_template("all-movies.html",
+                           movies_data_from_server=movies_data_from_server,
+                           upcoming_data_from_server=upcoming_data_from_server,
+                           title="Danh Sách Phim")
 
 @movie_bp.route("/movies")
 def movies():
@@ -514,3 +705,85 @@ def analyze_sentiment(comment_text):
         return float(data.get('score', 0.0))
     except:
         return 0.0
+
+def get_personalized_recommendations(user_id, movies_from_showtimes):
+    user_bookings = Booking.query.filter_by(user_id=user_id).all()
+    if not user_bookings or not movies_from_showtimes:
+        return sorted(movies_from_showtimes, key=lambda x: x.get('vote_average', 0), reverse=True)[:5]
+
+    watched_movie_ids = {str(b.movie_id) for b in user_bookings if b.movie_id}
+    user_interests_list = []
+
+    for b in user_bookings:
+        mid_str = str(b.movie_id)
+        current_match = next((m for m in movies_from_showtimes if str(m.get('id')) == mid_str), None)
+        if current_match:
+            g_list = current_match.get('genre', [])
+            user_interests_list.extend([str(i).lower() for i in g_list] if isinstance(g_list, list) else [str(g_list).lower()])
+        else:
+            extra = MovieExtra.query.get(mid_str)
+            if extra and extra.genres:
+                genres = extra.genres.lower().replace("/", " ").replace(",", " ").split()
+                user_interests_list.extend(genres)
+
+    user_profile_text = " ".join(set(user_interests_list)).strip()
+
+    try:
+        def normalize_movie_text(m):
+            g = m.get('genre', [])
+            return " ".join(g).lower() if isinstance(g, list) else str(g).lower()
+
+        movie_texts = [normalize_movie_text(m) for m in movies_from_showtimes]
+        cv = CountVectorizer()
+        vectors = cv.fit_transform(movie_texts + [user_profile_text])
+        sim_scores = cosine_similarity(vectors[-1], vectors[:-1])[0]
+    except:
+        return sorted(movies_from_showtimes, key=lambda x: x.get('vote_average', 0), reverse=True)[:5]
+
+    all_candidates = []
+    
+    for i, sim in enumerate(sim_scores):
+        movie = movies_from_showtimes[i]
+        m_id = str(movie.get('id'))
+
+        t_score = float(movie.get("tmdb_score", 0))
+        t_count = int(movie.get("tmdb_count", 0))
+        
+        local_ratings = Rating.query.filter_by(movie_id=m_id).all()
+        l_count = len(local_ratings)
+        l_sum = float(sum(r.score for r in local_ratings) or 0)
+
+        user_avg_ratings = db.session.query(
+            func.avg(Comment.final_rating).label('avg_score')
+        ).filter(
+            Comment.story_id == m_id,
+            Comment.final_rating > 0,
+            Comment.content != ""
+        ).group_by(Comment.user_id).all()
+
+        a_count = len(user_avg_ratings)
+        a_sum = float(sum(r.avg_score for r in user_avg_ratings) or 0)
+        
+        total_v = t_count + l_count + a_count
+        
+        if total_v > 0:
+            final_score = ((t_score * t_count) + l_sum + a_sum) / total_v
+            movie['vote_average'] = round(final_score, 1)
+        else:
+            movie['vote_average'] = t_score
+
+        if m_id not in watched_movie_ids:
+            all_candidates.append({'movie': movie, 'sim': float(sim)})
+
+    all_candidates.sort(key=lambda x: x['sim'], reverse=True)
+    top_5_sim_objects = all_candidates[:5]
+
+    if len(top_5_sim_objects) < 5:
+        already_ids = {str(obj['movie']['id']) for obj in top_5_sim_objects} | watched_movie_ids
+        fillers = [m for m in movies_from_showtimes if str(m.get('id')) not in already_ids]
+        fillers.sort(key=lambda x: x.get('vote_average', 0), reverse=True)
+        for f in fillers[:(5 - len(top_5_sim_objects))]:
+            top_5_sim_objects.append({'movie': f, 'sim': 0})
+
+    top_5_sim_objects.sort(key=lambda x: x['movie'].get('vote_average', 0), reverse=True)
+    return [obj['movie'] for obj in top_5_sim_objects]

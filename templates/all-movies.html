@@ -1,48 +1,64 @@
-{% extends "header.html" %}
+{% extends "header.html" %} 
+{% block title %}Phim - Rạp chiếu phim Bee Movie{% endblock %} 
 
-{% block title %}Phim - Bee Movie Cinema{% endblock %}
+{% block content %} 
+<main> 
+    <div class="search-bar"> 
+        <input type="text" id="searchInput" placeholder="Tìm kiếm phim..."> 
+        <button class="btn btn-primary" onclick="renderMovies()">Tìm kiếm</button> 
+    </div> 
 
-{% block content %}
-<main>    
+    <div class="container my-4" style="padding: 0 30px;"> 
+        <h3 style="color: #ffc107; margin: 0; text-transform: uppercase;"> 
+            Thể loại: <span id="genreFilterText">Tất cả</span> 
+            <input type="hidden" id="genreFilterValue" value="all">
+        </h3> 
 
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="Tìm kiếm phim...">
-        <select id="genreFilter">
-            <option value="all">Tất cả thể loại</option>
-            <option value="Hành động">Hành động</option>
-            <option value="Hài">Hài</option>
-            <option value="Tình cảm">Tình cảm</option>
-            <option value="Kinh dị">Kinh dị</option>
-        </select>
-        <button class="btn btn-primary" onclick="renderMovies()">Tìm Kiếm</button>
-    </div>
+        <div class="section-divider"> 
+            <h2 class="section-title">PHIM ĐANG CHIẾU</h2> 
+        </div> 
+        <div class="movie-grid" id="nowPlayingGrid"></div> 
 
-    <div class="container my-4" style="padding: 0 30px;">
-        <h2>{{ title }}</h2> 
-    </div>
-    <div class="movie-grid" id="movieGrid"></div>
+        <div class="section-divider" style="margin-top: 50px;"> 
+            <h2 class="section-title">PHIM SẮP CHIẾU</h2> 
+        </div> 
+        <div class="movie-grid" id="upcomingGrid"></div> 
+    </div> 
 
-    <div class="modal" id="movieModal">
-        <div class="modal-content">
-            <span class="close-btn" id="closeModal">&times;</span>
-            <img id="modalImage" src="" alt="">
-            <h2 id="modalTitle"></h2>
-            <p id="modalGenre"></p>
-            <p id="modalDesc"></p>
-            <a id="modalBuyTicket" href="#" class="btn-buy" style="width: 100%;">MUA VÉ / XEM CHI TIẾT</a>
-        </div>
-    </div>
+    <div class="modal" id="movieModal" style="display: none;"> 
+        <div class="modal-content"> 
+            <span class="close-btn" id="closeModal">×</span> 
+            <img id="modalImage" src="" alt=""> 
+            <h2 id="modalTitle"></h2> 
+            <p id="modalGenre"></p> 
+            <p id="modalDesc"></p> 
+            <a id="modalBuyTicket" href="#" class="btn-buy" style="width: 100%;">MUA VÉ / XEM CHI TIẾT</a> 
+        </div> 
+    </div> 
 
-    <footer>
-        &copy; 2025 BeeMovies Cinemas. All rights reserved.
-    </footer>
+    <script> 
+        const dataFromServer = {{ movies_data_from_server | default([]) | tojson | safe }}; 
+        const extraDataFromServer = {{ upcoming_data_from_server | default([]) | tojson | safe }}; 
+        const pageTitle = "{{ title }}"; 
 
-    <script>
-        const movies = {{ movies_data_from_server | tojson | safe }}; 
-        
-        const movieGrid = document.getElementById("movieGrid");
+        let nowPlayingMovies = []; 
+        let upcomingMovies = []; 
+
+        // Sửa lại logic phân loại phim dựa trên tiêu đề trang
+        if (pageTitle === "Phim Sắp Chiếu") { 
+            nowPlayingMovies = []; 
+            upcomingMovies = dataFromServer; 
+        } else if (pageTitle === "Phim Đang Chiếu") { 
+            nowPlayingMovies = dataFromServer; 
+            upcomingMovies = []; 
+        } else { 
+            nowPlayingMovies = dataFromServer; 
+            upcomingMovies = extraDataFromServer; 
+        } 
+
         const searchInput = document.getElementById("searchInput");
-        const genreFilter = document.getElementById("genreFilter");
+        const genreFilterValue = document.getElementById("genreFilterValue");
+        const genreFilterText = document.getElementById("genreFilterText");
         const modal = document.getElementById("movieModal");
         const closeModal = document.getElementById("closeModal");
         const modalImage = document.getElementById("modalImage");
@@ -51,63 +67,108 @@
         const modalDesc = document.getElementById("modalDesc");
         const modalBuyTicket = document.getElementById("modalBuyTicket");
 
-        function renderMovies() {
-            const searchText = searchInput.value.toLowerCase();
-            const genre = genreFilter.value;
-            movieGrid.innerHTML = "";
+        function superCleanGenre(genreData) {
+            if (!genreData) return 'Chưa rõ';
+            let str = "";
 
-            const filtered = movies.filter(m => 
-                (genre === "all" || (m.genre && m.genre.toLowerCase().includes(genre.toLowerCase()))) &&
-                m.title.toLowerCase().includes(searchText)
-            );
-
-            if (filtered.length === 0) {
-                movieGrid.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; padding: 50px; font-size: 1.2em;">Không tìm thấy phim nào phù hợp.</p>`;
-                return;
+            if (Array.isArray(genreData)) {
+                if (genreData.length > 5 && genreData.every(item => item.length <= 1)) {
+                    str = genreData.join('');
+                } else {
+                    str = genreData.join(', ');
+                }
+            } else {
+                str = String(genreData);
             }
 
-            filtered.forEach(m => {
-                const card = document.createElement("div");
-                card.classList.add("movie-card");
-                
-                const imgSrc = m.img || m.poster_url || "https://via.placeholder.com/250x350/333333/FFFFFF?text=Không+có+Poster";
-
-                card.innerHTML = `
-                    <img src="${imgSrc}" alt="${m.title}" 
-                         onerror="this.onerror=null;this.src='https://via.placeholder.com/250x350/333333/FFFFFF?text=Không+có+Poster'">
-                    <div class="vote-pill vote-pill2">
-                        ${m.vote_average || 0}
-                    </div>
-                    <div class="movie-info">
-                        <h3>${m.title}</h3>
-                        <p>${m.genre || ''}</p>
-                    </div>
-                `;
-                
-                card.addEventListener("click", () => openModal(m));
-                movieGrid.appendChild(card);
-            });
+            return str
+                .replace(/\//g, ',')         
+                .replace(/Phim/g, '')         
+                .replace(/phim/g, '')         
+                .split(',')                   
+                .map(item => item.trim())     
+                .filter(item => item !== "")  
+                .join(', ')                   
+                .trim();
         }
 
-        function openModal(movie) {
-            const imgSrc = movie.img || movie.poster_url || "https://via.placeholder.com/600x350/333333/FFFFFF?text=Không+có+Poster";
-            const baseUrl = "{{ url_for('movie.movie_detail', movie_id=0) }}".replace('0', movie.id);
-            modalImage.src = imgSrc;
-            modalTitle.innerHTML = `${movie.title} <span>${movie.vote_average || 0}</span>`;
-            modalGenre.textContent = "Thể loại: " + (movie.genre || "");
-            modalDesc.textContent = movie.desc || "";
-            modalBuyTicket.href = baseUrl;
-            modal.style.display = "flex";
-        }
+        function renderMovies() { 
+            const searchText = searchInput.value.toLowerCase(); 
+            const genre = genreFilterValue.value.toLowerCase(); 
 
-        closeModal.addEventListener("click", () => modal.style.display = "none");
-        window.addEventListener("click", (e) => {
-            if (e.target === modal) modal.style.display = "none";
-        });
-        searchInput.addEventListener("input", renderMovies);
-        genreFilter.addEventListener("change", renderMovies);
+            function populateGrid(data, gridId) { 
+                const grid = document.getElementById(gridId); 
+                if (!grid) return; 
+                const divider = grid.previousElementSibling; 
+                grid.innerHTML = ""; 
 
-        renderMovies();
-    </script>
-</main>
+                const filtered = data.filter(m => { 
+                    const genreStr = superCleanGenre(m.genre).toLowerCase();
+                    const matchGenre = (genre === "all" || genreStr.includes(genre)); 
+                    const matchSearch = (m.title || '').toLowerCase().includes(searchText); 
+                    return matchGenre && matchSearch; 
+                }); 
+
+                if (filtered.length === 0) { 
+                    if (divider) divider.style.display = "none"; 
+                    grid.style.display = "none"; 
+                } else { 
+                    if (divider) divider.style.display = "block"; 
+                    grid.style.display = "grid"; 
+                } 
+
+                filtered.forEach(m => { 
+                    const card = document.createElement("div"); 
+                    card.classList.add("movie-card"); 
+                    const imgSrc = m.img || m.poster_url || "https://via.placeholder.com/250x350/333333/FFFFFF?text=Không+có+Poster"; 
+                    
+                    card.innerHTML = ` 
+                        <img src="${imgSrc}" alt="${m.title || ''}" onerror="this.onerror=null;this.src='https://via.placeholder.com/250x350/333333/FFFFFF?text=Không+có+Poster'"> 
+                        <div class="vote-pill vote-pill2">${m.vote_average || 0}</div> 
+                        <div class="movie-info"> 
+                            <h3>${m.title || ''}</h3> 
+                            <p>${superCleanGenre(m.genre)}</p> 
+                            ${m.release_date ? `<small style="color: #bbb;">Ngày chiếu: ${m.release_date}</small>` : ''} 
+                        </div> 
+                    `; 
+                    card.addEventListener("click", () => openModal(m)); 
+                    grid.appendChild(card); 
+                }); 
+            } 
+            populateGrid(nowPlayingMovies, "nowPlayingGrid"); 
+            populateGrid(upcomingMovies, "upcomingGrid"); 
+        } 
+
+        function openModal(movie) { 
+            const imgSrc = movie.img || movie.poster_url || "https://via.placeholder.com/600x350/333333/FFFFFF?text=Không+có+Poster"; 
+            const baseUrl = "{{ url_for('movie.movie_detail', movie_id=0) }}".replace('0', movie.id); 
+            
+            modalImage.src = imgSrc; 
+            modalTitle.innerHTML = `${movie.title || ''}`; 
+            modalGenre.textContent = "Thể loại: " + superCleanGenre(movie.genre); 
+            modalDesc.textContent = movie.desc || movie.overview || "Không có mô tả."; 
+            modalBuyTicket.href = baseUrl; 
+            modal.style.display = "flex"; 
+        } 
+
+        closeModal.addEventListener("click", () => modal.style.display = "none"); 
+        window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; }); 
+        searchInput.addEventListener("input", renderMovies); 
+
+        window.addEventListener('DOMContentLoaded', () => { 
+            const urlParams = new URLSearchParams(window.location.search); 
+            const genreFromUrl = urlParams.get('genre'); 
+
+            if (genreFromUrl) { 
+                const decodedGenre = decodeURIComponent(genreFromUrl); 
+                genreFilterText.innerText = decodedGenre; 
+                genreFilterValue.value = decodedGenre; 
+            } else { 
+                genreFilterText.innerText = "Tất cả"; 
+                genreFilterValue.value = "all"; 
+            } 
+            renderMovies(); 
+        }); 
+    </script> 
+</main> 
 {% endblock %}

@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, current_app, jsonify, flash 
-from flask_login import current_user
+from flask_login import login_required, current_user
 from app.extensions import db
 from app.models.booking import Booking, BookingConcession
 from app.models.showtime import Showtime, SystemConfig
@@ -9,20 +9,21 @@ from app.models.comment import Comment
 from app.models.room import Room
 from app.models.cinema import Cinema
 from app.models.MovieExtra import MovieExtra
-from datetime import datetime, timedelta, time, time as timeobj
+from datetime import datetime, timedelta, timedelta as python_time, time as timeobj
 from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 from app.utils.tmdb import tmdb_movie_detail
 from app.controllers.booking_controller import seed_room_for_day
+from dotenv import load_dotenv
 import requests, random
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
-from datetime import datetime, timedelta as python_time
 
-
+load_dotenv()
 @admin_bp.route('/dashboard')
 def admin_dashboard():
     now = datetime.now()
     tmdb_key = current_app.config.get('TMDB_API_KEY')
+    gemini_key = current_app.config.get('GEMINI_API_KEY')
     
     period = request.args.get('period', 'all')
     cinema_id = request.args.get('cinema_id')
@@ -30,7 +31,7 @@ def admin_dashboard():
     date_range = request.args.get('date_range') 
     start_date = None
     end_date = None
-
+    
     if date_range and " to " in date_range:
         start_date_str, end_date_str = date_range.split(" to ")
         try:
@@ -54,6 +55,71 @@ def admin_dashboard():
             return q.filter(db.func.extract('month', Booking.booking_time) == now.month,
                             db.func.extract('year', Booking.booking_time) == now.year)
         return q
+    
+    concession_subquery = db.session.query(
+        BookingConcession.booking_id,
+        func.sum(Concession.price * BookingConcession.quantity).label('total_concession')
+    ).join(Concession).group_by(BookingConcession.booking_id).subquery()
+
+    top_selling_raw = apply_time_filter(
+        db.session.query(
+            Booking.movie_id,
+            func.sum(
+                Booking.total_price - func.coalesce(concession_subquery.c.total_concession, 0)
+            ).label('revenue'),
+            func.sum(
+                func.length(Booking.seat_code) - func.length(func.replace(Booking.seat_code, ',', '')) + 1
+            ).label('total_seats') 
+        )
+        .outerjoin(concession_subquery, Booking.id == concession_subquery.c.booking_id)
+        .filter(Booking.status.in_(['confirmed', 'used']))
+    ).group_by(Booking.movie_id).order_by(func.sum(Booking.total_price).desc()).limit(10).all()
+    
+    top_selling_movies = []
+    for item in top_selling_raw:
+        extra = MovieExtra.query.get(str(item.movie_id))
+        
+        m_title = None
+        m_poster = None
+        
+        if extra:
+            m_title = extra.title
+            m_poster = extra.poster_url 
+            
+        if not m_title or not m_poster:
+            try:
+                url = f"https://api.themoviedb.org/3/movie/{item.movie_id}?api_key={tmdb_key}&language=vi-VN"
+                response = requests.get(url, timeout=5).json()
+                
+                if 'title' in response:
+                    m_title = response.get('title')
+                    m_poster = response.get('poster_path')
+                    
+                    if not extra:
+                        new_extra = MovieExtra(movie_id=str(item.movie_id), title=m_title, poster_url=m_poster)
+                        db.session.add(new_extra)
+                        db.session.commit()
+            except Exception as e:
+                print(f"Lỗi gọi TMDB cho phim {item.movie_id}: {e}")
+
+        final_title = m_title if m_title else f"Phim #{item.movie_id}"
+        
+        if m_poster:
+            if m_poster.startswith('http'):
+                poster_link = m_poster
+            else:
+                poster_link = f"https://image.tmdb.org/t/p/w500{m_poster}"
+        else:
+            poster_link = "https://via.placeholder.com/500x750?text=No+Poster"
+
+        top_selling_movies.append({
+            'title': final_title,
+            'revenue': item.revenue,
+            'seats': int(item.total_seats),
+            'poster': poster_link
+        })
+
+    top_rate = "Dữ liệu xếp hạng được cập nhật tự động từ hệ thống."
 
     pending_rev_query = db.session.query(func.sum(Booking.total_price))\
         .join(Showtime, Booking.showtime_id == Showtime.id)\
@@ -226,6 +292,8 @@ def admin_dashboard():
                             bookings=bookings_list, 
                             concessions=concessions,
                             comments=comments,
+                            top_selling_movies=top_selling_movies,
+                            top_rate=top_rate,
                             is_auto_active=is_auto_active)
 @admin_bp.route('/add-showtime', methods=['POST'])
 def add_showtime():
@@ -662,3 +730,21 @@ def search_movie_extra():
         })
         
     return jsonify(results)
+@admin_bp.route('/delete-comment/<int:comment_id>', methods=['POST'])
+@login_required 
+def delete_comment(comment_id):
+    comment = Comment.query.get(comment_id)
+    
+    if not comment:
+        return jsonify({"success": False, "message": "Bình luận không tồn tại!"}), 404
+    
+    if current_user.role != 'admin': 
+        return jsonify({"success": False, "message": "Ông không có quyền admin để xóa!"}), 403
+
+    try:
+        db.session.delete(comment)
+        db.session.commit()
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()        
+        return jsonify({"success": False, "message": str(e)}), 500

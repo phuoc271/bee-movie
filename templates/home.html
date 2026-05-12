@@ -4,7 +4,9 @@
 
 {% block content %}
 <main>
-
+    <style>
+        :root { --gold: #ffc107; --dark: #000; --gray: #1a1a1a; }
+    </style>
     <section class="hero-banner">
         <div id="movieHeroCarousel" class="carousel slide" data-bs-ride="carousel">
 
@@ -34,7 +36,7 @@
                     <div class="carousel-caption">
                         <h5>{{ movie.title }}</h5>
                         <b>
-                            Thể loại: {{ movie.genre }} <br>
+                            Thể loại: {{ movie.genre | join(', ') }} <br>
                             Ngày chiếu: {{ movie.release_date }}
                         </b>
                         <br>
@@ -73,6 +75,64 @@
         </div>
     </section>
 
+    {% if recommended_movies %}
+    <section class="ai-hero-recommendation">
+        <div class="ai-container">
+            <div class="ai-header">
+                <h2 class="ai-title">🔥 ĐỀ XUẤT RIÊNG CHO BẠN</h2>
+                <div class="ai-badge">AI PERSONALIZED</div>
+            </div>
+
+            <div class="ai-carousel">
+                <div class="ai-carousel-track" id="aiTrack">
+                    {% for movie in recommended_movies %}
+                    <div class="ai-slide">
+                        <div class="ai-slide-bg" style="background-image: linear-gradient(to right, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.4) 100%), url('{{ movie.backdrop_url if movie.backdrop_url else movie.poster_url }}');"></div>
+                        
+                        <div class="ai-slide-content">
+                            <div class="ai-poster-wrapper">
+                                <div class="ai-rank">{{ loop.index }}</div>
+                                <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" class="ai-vertical-poster">
+                            </div>
+
+                            <div class="ai-movie-details">
+                                <h3 class="ai-movie-title">{{ movie.title }}</h3>
+                                <p class="ai-movie-desc">{{ movie.overview|truncate(290, True) }}</p>
+                                
+                                <div class="ai-tags">
+                                    {% if movie.genre is iterable and movie.genre is not string %}
+                                        {% for g in movie.genre %}
+                                            <span class="ai-tag">{{ g }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="ai-tag">{{ movie.genre | join(', ') }}</span>
+                                    {% endif %} 
+                                </div>
+
+                                <div class="ai-actions">
+                                    <div class="ai-rating">⭐ {{ movie.vote_average }}</div>
+                                    <a href="{{ url_for('movie.movie_detail', movie_id=movie.id) }}" class="ai-buy-btn">MUA VÉ NGAY</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <button class="ai-nav-btn ai-prev" onclick="moveSlide(-1)">&#10094;</button>
+                <button class="ai-nav-btn ai-next" onclick="moveSlide(1)">&#10095;</button>
+
+                <div class="ai-dots" id="aiDots">
+                    {% for movie in recommended_movies %}
+                    <span class="ai-dot" onclick="currentSlide({{ loop.index0 }})"></span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {% endif %}
+
     <section class="movie-list">
         <h2 class="active-movie-tab">PHIM ĐANG CHIẾU</h2>
 
@@ -101,7 +161,7 @@
     </section>
 
     <hr style="border-top: 2px solid #333; margin: 40px 0;">
-
+    
     <section class="movie-list">
         <h2 class="active-movie-tab">PHIM SẮP CHIẾU</h2>
 
@@ -134,6 +194,40 @@
 
         <a href="{{ url_for('movie.upcoming') }}" class="view-all">Xem tất cả</a>
     </section>
+    <script>
+        let currentIdx = 0;
+        const track = document.getElementById('aiTrack');
+        const slides = document.querySelectorAll('.ai-slide');
+        const dots = document.querySelectorAll('.ai-dot');
+        const totalSlides = slides.length;
 
+        function updateSlider() {
+            track.style.transform = `translateX(-${currentIdx * 100}%)`;
+            
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentIdx);
+            });
+        }
+
+        function moveSlide(step) {
+            currentIdx = (currentIdx + step + totalSlides) % totalSlides;
+            updateSlider();
+        }
+
+        function currentSlide(n) {
+            currentIdx = n;
+            updateSlider();
+        }
+
+        let autoSlide = setInterval(() => moveSlide(1), 5000);
+
+        const aiCarousel = document.querySelector('.ai-carousel');
+        aiCarousel.addEventListener('mouseenter', () => clearInterval(autoSlide));
+        aiCarousel.addEventListener('mouseleave', () => {
+            autoSlide = setInterval(() => moveSlide(1), 5000);
+        });
+
+        updateSlider();
+    </script>
 </main>
 {% endblock %}

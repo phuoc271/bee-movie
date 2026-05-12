@@ -15,6 +15,6 @@ class MovieExtra(db.Model):
     genres = db.Column(db.String(255), nullable=True)
     director = db.Column(db.String(255), nullable=True) 
     cast = db.Column(db.Text, nullable=True) 
-
+    
     def __init__(self, **kwargs):
         super(MovieExtra, self).__init__(**kwargs)

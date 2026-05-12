@@ -54,8 +54,8 @@
                 {% if session.username %}
                 <div class="dropdown">
                     <button class="btn btn-header-user dropdown-toggle d-flex align-items-center"
-                            type="button" data-bs-toggle="dropdown" aria-expanded="false"
-                            style="background: none; border: none; padding: 0; color: white;">
+                        type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                        style="background: none; border: none; padding: 0; color: white; position: relative; z-index: 1060;">
 
                         <span class="header-username" style="color: #ffc107; font-weight: bold;">
                             {{ session.username }}
@@ -101,6 +101,35 @@
                         <ul class="dropdown-menu-custom">
                             <li><a href="{{ url_for('movie.now_playing') }}">PHIM ĐANG CHIẾU</a></li>
                             <li><a href="{{ url_for('movie.upcoming') }}">PHIM SẮP CHIẾU</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle fw-bold text-uppercase" 
+                        href="/phim" 
+                        style="color: #ffc107;">
+                            THỂ LOẠI
+                        </a>
+                        <ul class="genre-dropdown-menu">
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Hành động">Hành động</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Phiêu lưu">Phiêu lưu</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Hoạt hình">Hoạt hình</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Hài">Hài hước</a></li> 
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Hình sự">Hình sự</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Kinh dị">Kinh dị</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Lãng mạn">Tình cảm</a></li> 
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Khoa học viễn tưởng">Khoa học viễn tưởng</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Bí ẩn">Bí ẩn</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Gây cấn">Gây cấn</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Chính kịch">Chính kịch</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Giả tưởng">Giả tưởng</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Gia đình">Gia đình</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Tài liệu">Tài liệu</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Lịch sử">Lịch sử</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Nhạc">Nhạc</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Chiến tranh">Chiến tranh</a></li>
+                            <li><a class="genre-dropdown-item" href="/phim?genre=Miền Tây">Miền Viễn Tây</a></li>
+                            
+                            <li><a class="genre-dropdown-item" style="color: white;" href="/phim">Tất cả phim</a></li>
                         </ul>
                     </li>
                     <li><a href="{{ url_for('movie.cinemas') }}">RẠP & GIÁ VÉ</a></li>

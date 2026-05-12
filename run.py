@@ -108,9 +108,12 @@ def startup_tasks(app):
                 print(f"3. Bỏ qua seed. FLASK_ENV={flask_env}, DEV_SEED={dev_seed_flag}, existing={existing}")
 
             if load_genres:
-                load_genres()
-                print("4. Đã tải danh sách thể loại (genres).")
-
+                try:
+                    load_genres()
+                    print("4. Đã tải danh sách thể loại (genres).")
+                except Exception as e:
+                    print(f"4. CẢNH BÁO: Chưa tải được thể loại do lỗi mạng: {e}")
+                    
             print("--- HỆ THỐNG SẴN SÀNG ---")
         except Exception:
             print("LỖI KHỞI ĐỘNG CHUNG:")
