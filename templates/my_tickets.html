@@ -64,14 +64,23 @@
                 </div>
 
                 <div class="col-md-4 p-3 border-start border-secondary d-flex justify-content-around align-items-center bg-black-50" style="min-height: 180px;">
-    
                     {% if ticket.movie_id is not none %}
                     <div class="qr-container text-center">
                         <p class="small mb-2 text-warning fw-bold text-uppercase" style="font-size: 0.65rem;">QR CODE VÉ XEM PHIM</p>
                         <div class="bg-white p-1 rounded shadow-sm" style="display: inline-block;">
                             <img src="https://quickchart.io/qr?text={{ ticket.full_info_qr | urlencode }}&size=100" 
-                                    onclick="openQR('{{ ticket.full_info_qr | urlencode }}', 'MÃ VÉ ĐIỆN TỬ')" 
-                                    style="cursor:pointer; width: 100px; height: 100px; display: block;">
+                                onclick="openQR('{{ ticket.full_info_qr | urlencode }}', 'MÃ VÉ ĐIỆN TỬ')" 
+                                style="cursor:pointer; width: 100px; height: 100px; display: block;">
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if ticket.concession_qr %}
+                    <div class="qr-container text-center">
+                        <p class="small mb-2 text-info fw-bold text-uppercase" style="font-size: 0.65rem;">QR BẮP NƯỚC</p>
+                        <div class="bg-white p-1 rounded shadow-sm" style="display: inline-block;">
+                            <img src="https://quickchart.io/qr?text={{ ticket.concession_qr | urlencode }}&size=100" 
+                                onclick="openQR('{{ ticket.concession_qr | urlencode }}', 'MÃ BẮP NƯỚC')" 
+                                style="cursor:pointer; width: 100px; height: 100px; display: block;">
                         </div>
                     </div>
                     {% endif %}

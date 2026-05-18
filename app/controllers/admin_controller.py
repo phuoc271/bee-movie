@@ -73,6 +73,7 @@ def admin_dashboard():
         )
         .outerjoin(concession_subquery, Booking.id == concession_subquery.c.booking_id)
         .filter(Booking.status.in_(['confirmed', 'used']))
+        .filter(Booking.movie_id.isnot(None))
     ).group_by(Booking.movie_id).order_by(func.sum(Booking.total_price).desc()).limit(10).all()
     
     top_selling_movies = []

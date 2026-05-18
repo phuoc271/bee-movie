@@ -9,7 +9,7 @@ from sqlalchemy import func
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from flask_login import current_user
-import json, os, re, pandas as pd
+import json, os, re, random, pandas as pd
 
 movie_bp = Blueprint('movie', __name__)
 
@@ -689,21 +689,35 @@ def cinemas(cinema_id=None):
                         grouped_data=grouped_data,
                         date_tabs=date_tabs)
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+API_KEYS_STR = os.getenv("GEMINI_API_KEY", "")
+API_KEYS_LIST = [key.strip() for key in API_KEYS_STR.split(",") if key.strip()]
 
 def analyze_sentiment(comment_text):
-    model = genai.GenerativeModel('gemini-3-flash-preview')
+    if not API_KEYS_LIST:
+        print("!!! Lỗi: Không tìm thấy API Key nào trong biến môi trường.")
+        return 0.0
+
+    selected_key = random.choice(API_KEYS_LIST)
+    genai.configure(api_key=selected_key)
+    
+    model = genai.GenerativeModel('gemini-3-flash-preview') 
+    
     prompt = f"""
     Phân tích cảm xúc bình luận phim: "{comment_text}"
     Trả về duy nhất JSON: {{"score": float}}
     Score từ -1.0 đến 1.0. Chỉ trả về JSON.
     """
+    
     try:
-        response = model.generate_content(prompt)
-        clean_text = response.text.strip().replace('```json', '').replace('```', '')
-        data = json.loads(clean_text)
+        response = model.generate_content(
+            prompt, 
+            generation_config={"response_mime_type": "application/json"}
+        )
+        
+        data = json.loads(response.text)
         return float(data.get('score', 0.0))
-    except:
+    except Exception as e:
+        print(f"Lỗi với Key {selected_key[:10]}... : {e}")
         return 0.0
 
 def get_personalized_recommendations(user_id, movies_from_showtimes):

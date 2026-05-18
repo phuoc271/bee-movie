@@ -37,10 +37,9 @@
 
 <script>
 function toggleBeeChat() {
-    const window = document.getElementById('bee-chat-window');
-    window.classList.toggle('bee-hidden');
-    // Khi mở chat thì tự động trỏ chuột vào ô nhập liệu luôn cho tiện
-    if (!window.classList.contains('bee-hidden')) {
+    const chatWindow = document.getElementById('bee-chat-window');
+    chatWindow.classList.toggle('bee-hidden');
+    if (!chatWindow.classList.contains('bee-hidden')) {
         document.getElementById('bee-user-input').focus();
     }
 }

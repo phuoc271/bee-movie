@@ -744,7 +744,7 @@ def my_tickets():
             'booking_time': b_list[0].booking_time,
             
             'full_info_qr': qr_content, 
-            'concession_qr': qr_content if (has_food or movie_id is None) else "",
+            'concession_qr': qr_content if (has_food or movie_id is None) else None,
             
             'ticket_code': ticket_code,
             'has_concession': has_food if movie_id else True, 

@@ -53,7 +53,6 @@
 </head>
 <body>
 <iframe name="hidden_frame" id="hidden_frame" style="display:none;"></iframe>
-<div class="header-space lg-12" style="height: auto !important;">{% include "header.html" %}</div>
 <div class="sidebar d-flex flex-column p-3 ">
     <div class="text-center mb-4">
         <h3 class="text-warning fw-bold"><i class="fas fa-bee"></i> BEE ADMIN</h3>
@@ -96,7 +95,17 @@
                 <i class="fas fa-edit me-2"></i> Tạo ,sửa thông tin phim
             </button>
         </li>
+        <li class="nav-item">
+            
+        </li>
     </ul>
+    <div style="margin-bottom: 40px;">
+        <a href="{{ url_for('movie.home') }}" style="text-decoration: none;">
+            <button class="nav-link" style ="border: 2px solid #ffc107; text-align: center; color: white !important;">
+                <i class="fa fa-home" aria-hidden="true"></i> Trang chủ
+            </button>
+        </a>
+    </div>
 </div>
 
 <div class="main-content">
@@ -342,7 +351,7 @@
             {% endfor %}
         </div>
     </div>
-        <div class="modal fade" style="display: none;" id="addShowtimeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal fade"  id="addShowtimeModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content bg-dark border-warning text-white">
                     <form id="showtimeForm" action="{{ url_for('admin.add_showtime') }}" method="POST">
@@ -356,29 +365,35 @@
                                 <label class="form-label text-warning fw-bold">
                                     <i class="fas fa-search me-1"></i> Tìm phim từ TMDB
                                 </label>
-                                
                                 <div class="input-group shadow-sm">
-                                    <input type="text" id="movieSearchInput" class="form-control bg-dark text-white border-warning" placeholder="Nhập tên phim từ TMDB...">
-                                    <button class="btn btn-warning" type="button" id="btnSearchMovie"><i class="fas fa-search"></i></button>
+                                    <input type="text" id="movieSearchInput" 
+                                        class="form-control bg-dark text-white border-warning" 
+                                        placeholder="Nhập tên phim từ TMDB..."
+                                        oninput="if(this.value.length>=2) doManualMovieSearch('tmdb_modal'); else document.getElementById('searchResultList').style.display='none'">
+                                    <button class="btn btn-warning" type="button" id="btnSearchMovie">
+                                        <i class="fas fa-search"></i>
+                                    </button>
                                 </div>
-                                
-                                <div id="searchResultList" class="list-group position-absolute w-100 mt-1 shadow-lg" style="z-index: 1050; display: none; max-height: 250px; overflow-y: auto;"></div>
+                                <div id="searchResultList" class="list-group position-absolute w-100 mt-1 shadow-lg" 
+                                    style="z-index: 1050; display: none; overflow-y: auto;"></div>
                             </div>
+
                             <div class="mb-3 position-relative">
                                 <label class="form-label text-success fw-bold">
                                     <i class="fas fa-database me-1"></i> Tìm phim nội bộ (MovieExtra)
                                 </label>
                                 <div class="input-group shadow-sm">
-                                    <input type="text" id="modalInternalSearchInput" 
-                                        class="form-control bg-dark text-white border-success" 
+                                    <input type="text" id="modalInternalSearchInput"
+                                        class="form-control bg-dark text-white border-success"
                                         placeholder="Nhập tên phim đã có trong hệ thống..."
-                                        oninput="searchModalInternal()">
-                                    <button class="btn btn-success" type="button" onclick="searchModalInternal()">
+                                        oninput="if(this.value.length>=2) doManualMovieSearch('extra_modal'); else document.getElementById('modalInternalResultList').style.display='none'">
+                                    <button class="btn btn-success" type="button" 
+                                        onclick="doManualMovieSearch('extra_modal')">
                                         <i class="fas fa-search"></i>
                                     </button>
                                 </div>
-                                <div id="modalInternalResultList" 
-                                    class="list-group position-absolute w-100 mt-1 shadow-lg" 
+                                <div id="modalInternalResultList"
+                                    class="list-group position-absolute w-100 mt-1 shadow-lg"
                                     style="z-index: 1051; display: none; max-height: 200px; overflow-y: auto;"></div>
                             </div>
                             <div id="extraFields" style="display: none;">
@@ -531,40 +546,40 @@
         </div>
 
         <div class="tab-pane fade" id="tab-food">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-warning m-0">Menu Concessions</h2>
-        <button class="btn btn-warning btn-sm" onclick="openConcessionModal()">
-            <i class="fas fa-plus"></i> Thêm món mới
-        </button>
-    </div>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-warning m-0">Menu Concessions</h2>
+                <button class="btn btn-warning btn-sm" onclick="openConcessionModal()">
+                    <i class="fas fa-plus"></i> Thêm món mới
+                </button>
+            </div>
 
-    <div class="row g-4">
-            {% for item in concessions %}
-            <div class="col-md-3">
-                <div class="card-stats text-center h-100 p-3 shadow-sm" style="border: 1px solid #444;">
-                    <img src="{{ url_for('static', filename=item.img) if item.img else url_for('static', filename='images/no-food.png') }}" 
-                        class="img-fluid rounded mb-3" style="height: 350px !important; width: 100%; object-fit: cover;">
-                    <h6>{{ item.name }}</h6>
-                    <p class="text-warning fw-bold">{{ "{:,.0f}".format(item.price) }}đ</p>
-                    
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-secondary w-100" 
-                                onclick="openConcessionModal('{{ item.id }}', '{{ item.name }}', '{{ item.price }}', '{{ item.img }}', '{{ item.description }}', '{{ item.category }}')">
-                            Sửa
-                        </button>
-                        <a href="{{ url_for('admin.delete_concession', id=item.id) }}" 
-                        class="btn btn-sm btn-outline-danger" 
-                        onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')">
-                            <i class="fas fa-trash"></i>
-                        </a>
+            <div class="row g-4">
+                {% for item in concessions %}
+                <div class="col-md-3">
+                    <div class="card-stats text-center h-100 p-3 shadow-sm" style="border: 1px solid #444;">
+                        <img src="{{ url_for('static', filename=item.img) if item.img else url_for('static', filename='images/no-food.png') }}" 
+                            class="img-fluid rounded mb-3" style="height: 350px !important; width: 100%; object-fit: cover;">
+                        <h6>{{ item.name }}</h6>
+                        <p class="text-warning fw-bold">{{ "{:,.0f}".format(item.price) }}đ</p>
+                        
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary w-100" 
+                                    onclick="openConcessionModal('{{ item.id }}', '{{ item.name }}', '{{ item.price }}', '{{ item.img }}', '{{ item.description }}', '{{ item.category }}')">
+                                Sửa
+                            </button>
+                            <a href="{{ url_for('admin.delete_concession', id=item.id) }}" 
+                            class="btn btn-sm btn-outline-danger" 
+                            onclick="return confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
-    </div>
 
-    <div class="modal fade" style="display: none;" id="concessionModal" tabindex="-1">
+    <div class="modal fade" id="concessionModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content bg-dark text-white border-secondary">
                 <form action="{{ url_for('admin.save_concession') }}" method="POST">
@@ -938,12 +953,10 @@
                                         <div class="mb-2">
                                             <label class="small text-white-50">Thể loại (Ngăn cách bởi dấu phẩy)</label>
                                             <div class="input-group">
-                                                <!-- Ô input này sẽ chứa kết quả cuối cùng để gửi lên Server -->
                                                 <input type="text" name="genres" id="target-genres" 
                                                     class="form-control form-control-sm bg-secondary text-white border-0" 
                                                     placeholder="Hành động, Hài hước..." value="">
                                                 
-                                                <!-- Thẻ select này chỉ dùng để "bấm chọn cho nhanh" -->
                                                 <select class="form-control form-control-sm bg-dark text-white border-0" 
                                                         style="max-width: 40px;" 
                                                         onchange="addGenre(this)">
@@ -1666,39 +1679,63 @@
         if (this.value.length >= 2) doManualMovieSearch('extra');
         else document.getElementById('manual_movie_results').style.display = 'none';
     });
+    document.getElementById('btnSearchMovie').addEventListener('click', () => {
+        doManualMovieSearch('tmdb_modal');
+    });
     async function doManualMovieSearch(source = 'tmdb') {
-        const inputId = (source === 'extra') ? 'manual_movie_search_extra' : 'manual_movie_search';
+        let inputId, resultsBoxId;
+
+        if (source === 'extra') {
+            inputId = 'manual_movie_search_extra';
+            resultsBoxId = 'manual_movie_results';
+        } else if (source === 'tmdb_modal') {
+            inputId = 'movieSearchInput';
+            resultsBoxId = 'searchResultList';
+        } else if (source === 'extra_modal') {
+            inputId = 'modalInternalSearchInput';
+            resultsBoxId = 'modalInternalResultList';
+        } else {
+            inputId = 'manual_movie_search';
+            resultsBoxId = 'manual_movie_results';
+        }
+
         const query = document.getElementById(inputId).value.trim();
         if (!query || query.length < 2) return;
-        const resultsBox = document.getElementById('manual_movie_results');
+
+        const resultsBox = document.getElementById(resultsBoxId);
         resultsBox.innerHTML = '<div class="list-group-item bg-dark text-white-50 small">Đang tìm...</div>';
         resultsBox.style.display = 'block';
 
+        const isModal = (source === 'tmdb_modal' || source === 'extra_modal');
+        const isExtra = (source === 'extra' || source === 'extra_modal');
+
         try {
             let results = [];
-        
-            if (source === 'tmdb') {
-                const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=vi-VN`);
-                const data = await res.json();
-                results = data.results || [];
-            } else {
+
+            if (isExtra) {
                 const res = await fetch(`/admin/search-movie-extra?q=${encodeURIComponent(query)}`);
                 const data = await res.json();
                 results = data.map(m => ({
                     id: m.movie_id,
                     title: m.title,
-                    poster_path: m.poster_url, 
+                    poster_path: m.poster_url,
                     release_date: m.release_date,
-                    is_extra: true 
+                    is_extra: true
                 }));
+            } else {
+                const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=vi-VN`);
+                const data = await res.json();
+                results = data.results || [];
             }
+
             resultsBox.innerHTML = '';
+
             if (results.length > 0) {
                 results.slice(0, 8).forEach(movie => {
                     const item = document.createElement('button');
                     item.type = 'button';
                     item.className = 'list-group-item list-group-item-action bg-dark text-white border-secondary d-flex align-items-center gap-2 small py-2';
-                    
+
                     let poster = 'https://via.placeholder.com/30x45';
                     if (movie.is_extra) {
                         poster = movie.poster_path || poster;
@@ -1707,7 +1744,9 @@
                     }
 
                     const year = movie.release_date ? movie.release_date.split('-')[0] : 'N/A';
-                    const sourceBadge = movie.is_extra ? '<span class="badge bg-success" style="font-size:9px;">EXTRA</span>' : '<span class="badge bg-info" style="font-size:9px;">TMDB</span>';
+                    const sourceBadge = movie.is_extra
+                        ? '<span class="badge bg-success" style="font-size:9px;">EXTRA</span>'
+                        : '<span class="badge bg-info" style="font-size:9px;">TMDB</span>';
 
                     item.innerHTML = `
                         <img src="${poster}" style="width:28px;height:42px;object-fit:cover;border-radius:3px;flex-shrink:0;">
@@ -1715,8 +1754,19 @@
                             <div class="fw-bold text-truncate" style="font-size:12px;">${movie.title} ${sourceBadge}</div>
                             <div class="text-info" style="font-size:11px;">${year} · ID: ${movie.id}</div>
                         </div>`;
-                    
-                    item.onclick = () => selectManualMovie(movie);
+
+                    item.onclick = () => {
+                        resultsBox.style.display = 'none';
+                        resultsBox.innerHTML = '';
+                        if (isModal) {
+                            selectMovie(movie);
+                            selectMovieForExtra(movie);
+                            document.getElementById(inputId).value = movie.title;
+                        } else {
+                            selectManualMovie(movie);
+                        }
+                    };
+
                     resultsBox.appendChild(item);
                 });
             } else {
@@ -2065,5 +2115,6 @@
         });
     }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
