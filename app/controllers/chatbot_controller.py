@@ -23,7 +23,7 @@ def call_gemini_api(prompt):
     """Logic gọi Gemini API với cơ chế xoay vòng và thử lại"""
     keys = get_gemini_keys()
     if not keys:
-        return "Lỗi: Chưa cấu hình GEMINI_API_KEY."
+        return call_groq_api(prompt)
     
     current_key = random.choice(keys)
     model_candidates = ["gemini-flash-latest", "gemini-2.0-flash-lite", "gemini-pro-latest"]
@@ -35,10 +35,41 @@ def call_gemini_api(prompt):
             if response.status_code == 200:
                 return response.json()['candidates'][0]['content']['parts'][0]['text']
             if response.status_code == 429:
-                return "QUOTA_EXCEEDED"
+                print("Gemini hết hạn mức! Đang chuyển hướng sang Groq...")
+                break
         except:
             continue
-    return "Lỗi: Không tìm thấy model nào hoạt động."
+    return call_groq_api(prompt)
+def get_groq_keys():
+    """Lấy danh sách Groq Keys từ .env"""
+    keys_str = os.getenv("GROQ_API_KEYS", "")
+    return [k.strip() for k in keys_str.split(",")] if keys_str else []
+
+def call_groq_api(prompt):
+    """Logic gọi Groq API làm dự phòng khi Gemini hết hạn mức"""
+    keys = get_groq_keys()
+    if not keys:
+        return "Lỗi: Hệ thống đang bận, vui lòng thử lại sau."
+    
+    current_key = random.choice(keys)
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {current_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.3
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code == 200:
+            return response.json()['choices'][0]['message']['content']
+    except Exception as e:
+        print(f"Lỗi gọi Groq: {e}")
+    return "Lỗi: Hệ thống đang bảo trì, vui lòng quay lại sau."
 
 def search_concessions_db(keyword):
     """Tìm kiếm bắp nước trong Database dựa trên từ khóa"""

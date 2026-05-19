@@ -1,9 +1,13 @@
 from app.extensions import db
 from datetime import datetime
+import uuid
+
+def generate_uuid():
+    return str(uuid.uuid4()).replace('-', '')
 
 class Showtime(db.Model):
     __tablename__ = 'showtimes'
-    id = db.Column(db.String(50), primary_key=True)
+    id = db.Column(db.String(50), primary_key=True, default=generate_uuid)
     movie_id = db.Column(db.String(255), nullable=False)
     room_id = db.Column(db.Integer, db.ForeignKey('rooms.id'), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)

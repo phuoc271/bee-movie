@@ -313,7 +313,7 @@ def add_showtime():
         movie_id_val = str(m_id).strip()
 
         if show_id and show_id.strip(): 
-            show = Showtime.query.get(int(show_id))
+            show = Showtime.query.get(str(show_id).strip())
             if show:
                 show.movie_id = movie_id_val
                 show.room_id = int(r_id)
@@ -329,9 +329,11 @@ def add_showtime():
             db.session.add(new_show)
         
         db.session.commit()
+        db.session.expire_all() 
+        
     except Exception as e:
         db.session.rollback() 
-        print(f"Lỗi: {e}")
+        print(f"Lỗi thêm/sửa suất chiếu: {e}")
     
     return redirect(url_for('admin.admin_dashboard'))
 
@@ -348,7 +350,6 @@ def update_showtime():
         show_id = request.form.get('showtime_id')
         show = Showtime.query.get_or_404(show_id)
         
-        # Ép kiểu string để DB VARCHAR nhận diện đúng
         new_movie_id = str(request.form.get('movie_id')).strip()
         show.movie_id = new_movie_id
         
@@ -419,6 +420,8 @@ def manual_auto_seed():
                 seed_room_for_day(room.id, target_date, None, is_mixed=True, mixed_movies=all_mixed_pool, start_idx=i)
 
         db.session.commit()
+        db.session.expire_all()
+        
         return jsonify({"success": True, "message": f"Đã phủ kín lịch cho {len(rooms)} phòng thành công!"})
 
     except Exception as e:
@@ -427,7 +430,6 @@ def manual_auto_seed():
 
 @admin_bp.route('/delete-schedule', methods=['POST'])
 def delete_schedule():
-    
     try:
         data = request.json
         cinema_id = data.get('cinema_id')
@@ -436,9 +438,8 @@ def delete_schedule():
         if not cinema_id or not date_str:
             return jsonify({"success": False, "message": "Thiếu thông tin rạp hoặc ngày!"})
 
-        target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        day_start = datetime.combine(target_date, python_time(0, 0, 0))
-        day_end = datetime.combine(target_date, python_time(23, 59, 59))
+        day_start = datetime.strptime(f"{date_str} 00:00:00", '%Y-%m-%d %H:%M:%S')
+        day_end = datetime.strptime(f"{date_str} 23:59:59", '%Y-%m-%d %H:%M:%S')
 
         rooms = Room.query.filter_by(cinema_id=cinema_id).all()
         if not rooms:
@@ -453,6 +454,8 @@ def delete_schedule():
         ).delete(synchronize_session=False)
 
         db.session.commit()
+        db.session.expire_all() 
+        
         return jsonify({
             "success": True, 
             "message": f"Đã xóa thành công {deleted_count} suất chiếu ngày {date_str}."

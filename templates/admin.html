@@ -1058,13 +1058,19 @@
     document.addEventListener('DOMContentLoaded', async () => {
         const movieElements = document.querySelectorAll('.movie-name');
         const delay = (ms) => new Promise(res => setTimeout(res, ms));
+        const cache = {};
 
         for (const el of movieElements) {
             const mid = el.getAttribute('data-id');
             if (!mid || mid === 'None' || mid.trim() === "") continue;
 
             const midStr = String(mid).trim();
-            if (el.innerText.length > 20) continue; 
+            if (el.innerText.length > 20) continue;
+
+            if (cache[midStr]) {
+                el.innerText = cache[midStr];
+                continue;
+            }
 
             try {
                 if (midStr.length > 10) {
@@ -1073,21 +1079,16 @@
                         const localData = await response.json();
                         if (localData.exists && localData.title) {
                             el.innerText = localData.title;
+                            cache[midStr] = localData.title; 
                         }
                     }
-                } 
-                else {
+                } else {
                     const data = await callTMDB(`/movie/${midStr}`);
                     if (data && data.title) {
                         el.innerText = data.title;
-                    } else {
-                        const response = await fetch(`/admin/get-movie-extra/${midStr}`);
-                        const localData = await response.json();
-                        if (localData.exists && localData.title) {
-                            el.innerText = localData.title;
-                        }
+                        cache[midStr] = data.title;
                     }
-                    await delay(100);
+                    await delay(150); 
                 }
             } catch (err) {
                 console.warn(`Không lấy được tên cho phim ${midStr}`);
@@ -1429,10 +1430,13 @@
             })
             .then(res => res.json())
             .then(data => {
-                if(data.success) {
+                if (data.success) {
                     alert(data.message);
                     const section = document.getElementById(`cinema-${cinemaId}`);
-                    if (section) section.style.opacity = '0.3'; 
+                    if (section) {
+                        section.style.opacity = '0.3';
+                    }
+                    window.location.reload(); 
                 } else {
                     alert("Lỗi: " + data.message);
                 }
@@ -1893,27 +1897,29 @@
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> ĐANG TẠO...';
 
-        const formData = new FormData();
-        formData.append('movie_id', movieId);
-        formData.append('room_id', roomId);
-        formData.append('start_time', startTime);
-        formData.append('price', price);
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/add-showtime';
 
-        try {
-            await fetch('/admin/add-showtime', { method: 'POST', body: formData });
-            alert('Đã tạo suất chiếu thành công!');
-            clearManualMovie();
-            document.getElementById('manual_cinema_id').value = '';
-            document.getElementById('manual_room_id').innerHTML = '<option value="">--- Chọn rạp trước ---</option>';
-            document.getElementById('manual_start_time').value = '';
-            document.getElementById('manual_price').value = '';
-            document.getElementById('manual_preview_box').style.display = 'none';
-        } catch (err) {
-            alert('Lỗi kết nối server!');
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalHTML;
+        const data = {
+            'movie_id': movieId,
+            'room_id': roomId,
+            'start_time': startTime,
+            'price': price
+        };
+
+        for (const key in data) {
+            if (data.hasOwnProperty(key)) {
+                const hiddenField = document.createElement('input');
+                hiddenField.type = 'hidden';
+                hiddenField.name = key;
+                hiddenField.value = data[key];
+                form.appendChild(hiddenField);
+            }
         }
+
+        document.body.appendChild(form);
+        form.submit();
     }
 
     document.addEventListener('click', (e) => {
