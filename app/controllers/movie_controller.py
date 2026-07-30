@@ -799,5 +799,11 @@ def get_personalized_recommendations(user_id, movies_from_showtimes):
         for f in fillers[:(5 - len(top_5_sim_objects))]:
             top_5_sim_objects.append({'movie': f, 'sim': 0})
 
-    top_5_sim_objects.sort(key=lambda x: x['movie'].get('vote_average', 0), reverse=True)
-    return [obj['movie'] for obj in top_5_sim_objects]
+    top_5_sim_objects.sort(key=lambda x: (x['sim'], x['movie'].get('vote_average', 0)), reverse=True)
+    valid_movies = []
+    for obj in top_5_sim_objects:
+        m = obj['movie']
+        if m and m.get('id') and m.get('title') and str(m.get('title')).lower() != 'none':
+            valid_movies.append(m)
+
+    return valid_movies
