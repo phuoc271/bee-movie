@@ -11,6 +11,7 @@ import google.auth.transport.requests
 import google.oauth2.id_token
 import os
 import time
+import cloudinary.uploader
 from app.extensions import db, mail
 from app.models import User
 from flask_login import login_user
@@ -114,7 +115,7 @@ def google_login():
         )
         email = user_info.get("email")
         name = user_info.get("name")
-        
+        picture = user_info.get("picture")
         user = get_user_by_email(email) 
 
         if not user:
@@ -123,11 +124,15 @@ def google_login():
                 email=email,
                 username=email.split("@")[0],
                 role='user',
+                avatar=picture,
                 password_hash=None 
             )
             db.session.add(new_user)
             db.session.commit()
             user = new_user
+        elif picture and not user.avatar:
+            user.avatar = picture
+            db.session.commit()
             
         login_user(user)
         session["user_id"] = user.id
@@ -239,24 +244,15 @@ def profile():
         if 'avatar' in request.files:
             file = request.files['avatar']
             if file and file.filename != '':
-                if user.avatar:
-                    old_physical_path = os.path.join(current_app.root_path, 'static', user.avatar)
-                    if os.path.exists(old_physical_path):
-                        try:
-                            os.remove(old_physical_path)
-                            print(f"DEBUG: Đã xóa file cũ tại {old_physical_path}")
-                        except Exception as e:
-                            print(f"DEBUG: Lỗi khi xóa file vật lý: {e}")
-
-                upload_folder = current_app.config.get('UPLOAD_FOLDER', 'static/uploads/avatars')
-                if not os.path.exists(upload_folder):
-                    os.makedirs(upload_folder)
-
-                timestamp = int(time.time())
-                filename = secure_filename(f"user_{user.id}_{timestamp}_{file.filename}")
-                file_path = os.path.join(upload_folder, filename)
-                file.save(file_path)
-                user.avatar = f"uploads/avatars/{filename}"
+                try:
+                    upload_result = cloudinary.uploader.upload(
+                        file, 
+                        folder="bee_movie/avatars"
+                    )
+                    user.avatar = upload_result['secure_url']
+                except Exception as e:
+                    print(f"CLOUDINARY UPLOAD ERROR: {e}")
+                    flash("Lỗi khi tải ảnh lên đám mây Cloudinary.", "danger")
 
         try:
             db.session.commit()
@@ -302,14 +298,6 @@ def delete_account():
         Booking.query.filter_by(user_id=user.id).delete()
         
         db.session.flush()
-
-        if user.avatar:
-            avatar_path = os.path.join(current_app.root_path, 'static', user.avatar)
-            if os.path.exists(avatar_path):
-                try:
-                    os.remove(avatar_path)
-                except Exception as e:
-                    print(f"Lỗi khi xóa file avatar: {e}")
 
         db.session.delete(user)
         db.session.commit()

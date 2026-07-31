@@ -224,8 +224,10 @@
         {% for comment in comments %}
         <div class="main-comment mb-4 border-bottom border-secondary pb-3" data-sentiment="{% if comment.sentiment_score > 0.3 %}positive{% elif comment.sentiment_score < -0.3 %}negative{% else %}neutral{% endif %}">
             <div class="d-flex">
-                <img src="{{ url_for('static', filename=comment.user.avatar or 'images/default-avatar.png') }}" 
-                    class="rounded-circle me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                <img src="{{ comment.user.avatar if comment.user.avatar and comment.user.avatar.startswith('http') else url_for('static', filename=comment.user.avatar or 'images/default-avatar.png') }}" 
+                    class="rounded-circle me-3" 
+                    style="width: 50px; height: 50px; object-fit: cover;"
+                    onerror="this.src='{{ url_for('static', filename='images/default-avatar.png') }}';">
                 
                 <div class="w-100">
                     <div class="d-flex align-items-center justify-content-between">
@@ -272,8 +274,11 @@
                     <div class="replies ms-5 mt-3" id="replies-{{ comment.id }}" style="display: none;">
                         {% for reply in comment.replies %}
                         <div class="reply-item mb-2 border-start border-secondary ps-3">
-                            <div class="d-flex align-items-start"> <img src="{{ url_for('static', filename=reply.user.avatar or 'images/default-avatar.png') }}" 
-                                    class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover; border: 1px solid #444;">
+                            <div class="d-flex align-items-start"> 
+                                <img src="{{ reply.user.avatar if reply.user.avatar and reply.user.avatar.startswith('http') else url_for('static', filename=reply.user.avatar or 'images/default-avatar.png') }}" 
+                                    class="rounded-circle me-2" 
+                                    style="width: 40px; height: 40px; object-fit: cover; border: 1px solid #444;"
+                                    onerror="this.src='{{ url_for('static', filename='images/default-avatar.png') }}';">
 
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center justify-content-between">

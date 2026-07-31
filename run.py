@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 import warnings
+import cloudinary
 from datetime import datetime
 from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -22,7 +23,6 @@ def create_app():
         "pool_pre_ping": True, 
         "pool_recycle": 280,   
     }
-    app.config["UPLOAD_FOLDER"] = os.getenv("UPLOAD_FOLDER", "static/uploads/avatars")
     app.config.update(
         MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com'),
         MAIL_PORT = int(os.getenv('MAIL_PORT', "587")),
@@ -35,6 +35,11 @@ def create_app():
     app.config["TMDB_IMAGE_BASE_URL"] = os.getenv("TMDB_IMAGE_BASE_URL", "https://image.tmdb.org/t/p/w500")
     app.config["TMDB_BACKDROP_BASE_URL"] = os.getenv("TMDB_BACKDROP_BASE_URL", "https://image.tmdb.org/t/p/original")
 
+    cloudinary.config(
+        cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"),
+        api_key = os.getenv("CLOUDINARY_API_KEY"),
+        api_secret = os.getenv("CLOUDINARY_API_SECRET")
+    )
     return app
 
 app = create_app()
