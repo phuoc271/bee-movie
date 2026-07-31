@@ -18,6 +18,10 @@ def create_app():
     app.config["SECURITY_PASSWORD_SALT"] = os.getenv("SECURITY_PASSWORD_SALT", "some-random-salt-value")
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True, 
+        "pool_recycle": 280,   
+    }
     app.config["UPLOAD_FOLDER"] = os.getenv("UPLOAD_FOLDER", "static/uploads/avatars")
     app.config.update(
         MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com'),
