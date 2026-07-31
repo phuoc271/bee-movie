@@ -110,7 +110,7 @@ def google_login():
         user_info = google.oauth2.id_token.verify_oauth2_token(
             id_token,
             request_adapter,
-            "326949134175-muq4egv1vofb5ln8dh1fov9vq6nkr25s.apps.googleusercontent.com"
+            "103196067800-jgevbof1vcb85gbc2a9igh452c7ld6ig.apps.googleusercontent.com"
         )
         email = user_info.get("email")
         name = user_info.get("name")
