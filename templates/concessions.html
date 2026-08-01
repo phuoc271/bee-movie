@@ -13,7 +13,11 @@
             {% for item in combos %}
             <div class="concessions-card" style="background: #1a1a1a; border-radius: 15px; width: 300px; overflow: hidden; border: 1px solid #333; transition: all 0.4s ease; display: flex; flex-direction: column;">
                 <div style="width: 100%; height: 220px; overflow: hidden;">
-                    <img src="{{ url_for('static', filename=item.img) }}" alt="{{ item.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <!-- SỬA TẠI ĐÂY: Hỗ trợ cả link online (http/https) lẫn file local cũ nếu chưa migrate hết -->
+                    <img src="{% if item.img and item.img.startswith('http') %}{{ item.img }}{% else %}{{ url_for('static', filename=item.img or 'images/no-image.jpg') }}{% endif %}" 
+                         alt="{{ item.name }}" 
+                         onerror="this.src='https://via.placeholder.com/300x220?text=No+Image';"
+                         style="width: 100%; height: 100%; object-fit: cover;">
                 </div>
                 
                 <div style="padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between;">
@@ -62,7 +66,10 @@
             {% for item in singles %}
             <div class="concessions-card" style="background: #1a1a1a; border-radius: 15px; width: 300px; overflow: hidden; border: 1px solid #333; transition: all 0.4s ease; display: flex; flex-direction: column;">
                 <div style="width: 100%; height: 220px; overflow: hidden;">
-                    <img src="{{ url_for('static', filename=item.img) }}" alt="{{ item.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="{% if item.img and item.img.startswith('http') %}{{ item.img }}{% else %}{{ url_for('static', filename=item.img or 'images/no-image.jpg') }}{% endif %}" 
+                         alt="{{ item.name }}" 
+                         onerror="this.src='https://via.placeholder.com/300x220?text=No+Image';"
+                         style="width: 100%; height: 100%; object-fit: cover;">
                 </div>
                 
                 <div style="padding: 20px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between;">

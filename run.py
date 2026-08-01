@@ -7,7 +7,7 @@ from datetime import datetime
 from flask import Flask
 from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
-from sqlalchemy import exc
+from sqlalchemy import exc, text
 from app.extensions import db, cache, mail, login_manager
 from app.controllers import register_controllers
 
@@ -53,6 +53,14 @@ login_manager.login_view = 'auth.login'
 login_manager.login_message = "Vui lòng đăng nhập để tiếp tục."
 login_manager.login_message_category = "info"
 
+@app.route('/healthcheck')
+def health_check():
+    try:
+        db.session.execute(text('SELECT 1'))
+        return {"status": "ok", "db": "connected"}, 200
+    except Exception as e:
+        return {"status": "error", "message": str(e)}, 500
+    
 try:
     register_controllers(app)
 except Exception:
