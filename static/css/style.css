@@ -1747,3 +1747,249 @@ a.reply:hover { color: var(--accent-color) !important; }
 .ai-dots { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 10; }
 .ai-dot { width: 12px; height: 12px; background: rgba(255,255,255,0.3); border-radius: 50%; cursor: pointer; transition: 0.3s; }
 .ai-dot.active { background: var(--gold); width: 30px; border-radius: 10px; }
+
+@media (min-width: 1400px) {
+    .container { max-width: 1320px; }
+    .ai-container { max-width: 1500px; }
+    .ai-carousel { height: 560px; }
+    .movies-container,
+    .movie-grid { grid-template-columns: repeat(5, 1fr); }
+}
+@media (max-width: 1199px) and (min-width: 993px) {
+    .ai-slide-content { gap: 30px; padding: 30px; }
+    .ai-vertical-poster { width: 220px; height: 320px; }
+    .ai-movie-title { font-size: 2.3rem; }
+    .movie-info-detail .poster { flex: 0 0 260px; max-width: 260px; }
+}
+@media (max-width: 992px) {
+    .hero-banner { height: 450px; min-height: 350px; }
+    .carousel-caption { left: 8% !important; max-width: 90%; }
+    .carousel-caption h5 { font-size: 2.2em; }
+    .carousel-caption p { font-size: 1em; }
+
+    .buy-ticket-online { flex-wrap: wrap; gap: 12px; padding: 15px 5%; }
+
+    .ai-slide-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+        padding: 25px;
+    }
+    .ai-movie-details { text-align: center; max-width: 100%; }
+    .ai-vertical-poster { width: 200px; height: 290px; }
+    .ai-carousel { height: 620px; }
+    .ai-movie-title { font-size: 2rem; }
+    .ai-actions { justify-content: center; flex-wrap: wrap; gap: 15px; }
+    .ai-nav-btn { width: 45px; height: 45px; font-size: 1.1rem; }
+
+    .concessions-container { grid-template-columns: repeat(2, 1fr); }
+
+    .payment-wrapper { max-width: 90%; padding: 20px; }
+
+    .profile-header-container { height: 350px; }
+    .avatar-img,
+    .avatar-hover-wrapper { width: 110px; height: 110px; }
+
+    .footer-booking-fixed { padding: 15px 25px; }
+    .total-price-text { font-size: 22px; }
+
+    .genre-dropdown-menu { min-width: 90vw; grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+    .hero-banner { height: 380px; min-height: 300px; }
+    .carousel-caption h5 { font-size: 1.7em; }
+    .carousel-caption p { font-size: 0.9em; margin-bottom: 12px; }
+    .btn-detail { padding: 8px 20px; font-size: 0.9em; }
+
+    .detail-page-container { padding: 30px 15px; }
+    .detail-page-container h1 { font-size: 24px; }
+    .section { padding: 15px; }
+    .section h2 { font-size: 20px; }
+
+    .search-bar { flex-direction: column; align-items: stretch; padding: 15px; }
+    .search-bar input, .search-bar select { min-width: 0; width: 100%; }
+
+    .ai-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .ai-title { font-size: 1.5rem; }
+    .ai-carousel { height: 680px; border-radius: 12px; }
+    .ai-vertical-poster { width: 160px; height: 230px; }
+    .ai-movie-title { font-size: 1.5rem; }
+    .ai-movie-desc { font-size: 0.95rem; }
+    .ai-tags { justify-content: center; }
+    .ai-buy-btn { padding: 12px 28px; font-size: 0.9rem; }
+    .ai-nav-btn { width: 38px; height: 38px; font-size: 1rem; }
+    .ai-prev { left: 8px; }
+    .ai-next { right: 8px; }
+
+    .concessions-container { gap: 15px; }
+    .concessions-card img { height: 220px; }
+
+    .seat-item { width: 34px; height: 34px; }
+    .seat-item i { font-size: 24px; }
+    .row-seats { gap: 6px !important; }
+    .screen-line { width: 90%; }
+    .exit-label { right: 5%; top: 10px; font-size: 10px; }
+
+    .booking-legend { gap: 15px; font-size: 12px; flex-wrap: wrap; }
+
+    .footer-booking-fixed {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px 15px;
+        text-align: center;
+    }
+    .total-price-text { font-size: 20px; }
+
+    .payment-wrapper { margin: 25px auto; padding: 15px; }
+    .ticket-info-box { padding: 15px; }
+    .method-item { padding: 12px; }
+
+    .modal-content { padding: 20px; max-height: 95vh; }
+    .modal-content img { max-height: 250px; }
+
+    .profile-header-container { height: 300px; }
+    .avatar-img,
+    .avatar-hover-wrapper { width: 100px; height: 100px; }
+    .profile-content-section { margin-top: 90px; }
+
+    .header-user-info { margin-left: 10px; gap: 6px; }
+    .header-username { font-size: 15px !important; }
+    .header-avatar-container { width: 45px !important; height: 45px !important; }
+
+    #bee-chat-window { width: 90vw; right: 5vw; height: 60vh; bottom: 80px; }
+    #bee-chat-bubble { width: 50px; height: 50px; bottom: 15px; right: 15px; }
+
+    .genre-dropdown-menu { min-width: 94vw; grid-template-columns: repeat(2, 1fr); }
+
+    .about-hero { height: 500px; padding: 40px 15px; }
+    .bee-logo-large { font-size: 3rem; }
+    .stat-number { font-size: 2rem; }
+    .feature-card { padding: 20px; }
+}
+@media (max-width: 600px) {
+    .hero-banner { height: 320px; min-height: 260px; }
+    .carousel-caption { bottom: 8%; }
+    .carousel-caption h5 { font-size: 1.4em; }
+    .carousel-caption p { font-size: 0.8em; }
+    .carousel-indicators { margin-bottom: -25px !important; }
+
+    .movie-list { padding: 25px 4%; }
+    .movie-list h2 { font-size: 18px; padding: 4px 10px; }
+    .movie-card { width: 100%; }
+    .movie-card img { height: 260px; }
+
+    .ai-carousel { height: 750px; }
+    .ai-vertical-poster { width: 140px; height: 200px; }
+    .ai-rank { width: 36px; height: 36px; font-size: 1rem; top: -8px; left: -8px; }
+    .ai-movie-title { font-size: 1.25rem; }
+    .ai-movie-desc { font-size: 0.85rem; margin-bottom: 15px; }
+    .ai-tag { font-size: 0.75rem; padding: 4px 10px; }
+    .ai-rating { font-size: 1.3rem; }
+    .ai-dots { bottom: 15px; }
+    .ai-dot { width: 8px; height: 8px; }
+    .ai-dot.active { width: 20px; }
+
+    .concessions-container { grid-template-columns: 1fr; }
+    .concessions-card img { height: 260px; }
+
+    .seat-item { width: 28px; height: 28px; }
+    .seat-item i { font-size: 20px; }
+    .seat-code-label { font-size: 8px; }
+    .row-seats { gap: 4px !important; }
+
+    .vote-pill { font-size: 1.2rem; padding: 4px 10px; top: 8px; right: 8px; }
+    .vote-pill2 { font-size: 0.9rem !important; }
+
+    .close-btn { font-size: 24px; top: 10px; right: 15px; }
+    .close-button { font-size: 30px; top: -35px; }
+
+    .avatar-img,
+    .avatar-hover-wrapper { width: 85px; height: 85px; }
+    .profile-header-container { height: 260px; }
+    .form-control-custom { padding: 10px; }
+
+    .promo-detail-section { padding: 25px 5%; }
+    .promo-title-main { font-size: 1.3rem; padding-left: 10px; }
+
+    .about-hero { height: 420px; }
+    .bee-logo-large { font-size: 2.2rem; }
+    .stat-box { padding: 12px; }
+    .stat-number { font-size: 1.6rem; }
+    .stat-label { font-size: 0.75rem; }
+}
+@media (max-width: 480px) {
+    .hero-banner { height: 260px; min-height: 220px; }
+    .carousel-caption h5 { font-size: 1.15em; }
+    .carousel-caption p { font-size: 0.75em; margin-bottom: 12px; }
+    .btn-detail { padding: 6px 16px; font-size: 0.8em; }
+
+    .buy-ticket-online { padding: 12px 4%; gap: 8px; }
+    .buy-ticket-online select { padding: 8px 10px; font-size: 0.85rem; }
+
+    .ai-carousel { height: 800px; }
+    .ai-slide-content { padding: 15px; gap: 15px; }
+    .ai-vertical-poster { width: 120px; height: 170px; }
+    .ai-movie-title { font-size: 1.05rem; }
+    .ai-actions { gap: 10px; }
+    .ai-buy-btn { padding: 10px 20px; font-size: 0.8rem; }
+    .ai-nav-btn { width: 32px; height: 32px; font-size: 0.85rem; }
+
+    .footer-booking-fixed { padding: 10px; }
+    .total-price-text { font-size: 18px; }
+
+    #bee-chat-window { width: 92vw; right: 4vw; height: 55vh; }
+    #bee-chat-bubble,
+    #chat-bubble { width: 45px; height: 45px; font-size: 18px; }
+
+    .genre-dropdown-menu { grid-template-columns: 1fr 1fr; padding: 10px; }
+    .genre-dropdown-item { font-size: 0.8rem; padding: 6px 8px; }
+
+    .details p strong { min-width: 0; }
+}
+@media (max-width: 375px) {
+    .header-logo { height: 40px; }
+    .main-nav1 ul li a { font-size: 10px; margin-left: 4px; }
+    .user-actions a { padding: 6px 10px; font-size: 11px; margin-left: 6px; }
+
+    .ai-vertical-poster { width: 100px; height: 145px; }
+    .ai-movie-title { font-size: 0.95rem; }
+    .ai-movie-desc { font-size: 0.8rem; -webkit-line-clamp: 3; }
+
+    .seat-item { width: 24px; height: 24px; }
+    .seat-item i { font-size: 17px; }
+
+    .avatar-img,
+    .avatar-hover-wrapper { width: 75px; height: 75px; }
+
+    .qr-code img { max-width: 160px; }
+    #ticket-id { font-size: 18px; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+    .hero-banner { height: 240px; min-height: 200px; }
+    .ai-carousel { height: 380px; }
+    .ai-slide-content { flex-direction: row; padding: 15px; gap: 20px; }
+    .ai-vertical-poster { width: 130px; height: 190px; }
+    .modal-content { max-height: 90vh; overflow-y: auto; }
+    #bee-chat-window { height: 80vh; bottom: 70px; }
+    .footer-booking-fixed { position: sticky; }
+}
+@media (hover: none) and (pointer: coarse) {
+    .nav-item-dropdown .dropdown-menu-custom,
+    .nav-item.dropdown .genre-dropdown-menu {
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        display: none;
+    }
+    .card:hover,
+    .promo-card:hover,
+    .feature-card:hover,
+    .concessions-card:hover {
+        transform: none;
+    }
+}
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .header-logo,
+    .avatar-img,
+    .header-avatar-img { image-rendering: -webkit-optimize-contrast; }
+}
