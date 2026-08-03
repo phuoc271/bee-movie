@@ -232,7 +232,7 @@ def change_password():
 def profile():
     if "user_email" not in session:
         flash("Vui lòng đăng nhập để xem hồ sơ.", "warning")
-        return redirect(url_for('auth.login'))
+        return redirect(url_for("auth.login"))
 
     user = get_user_by_email(session["user_email"])
 
@@ -241,25 +241,26 @@ def profile():
         user.username = request.form.get("username")
         user.gender = request.form.get("gender")
 
-        if 'avatar' in request.files:
-            file = request.files['avatar']
-            if file and file.filename != '':
+        if "avatar" in request.files:
+            file = request.files["avatar"]
+            if file and file.filename != "":
                 try:
                     upload_result = cloudinary.uploader.upload(
-                        file, 
-                        folder="bee_movie/avatars"
+                        file, folder="bee_movie/avatars"
                     )
-                    user.avatar = upload_result['secure_url']
+                    user.avatar = upload_result["secure_url"]
                 except Exception as e:
                     print(f"CLOUDINARY UPLOAD ERROR: {e}")
                     flash("Lỗi khi tải ảnh lên đám mây Cloudinary.", "danger")
 
         try:
             db.session.commit()
+
             session["username"] = user.username
             session["fullname"] = user.fullname
             session["gender"] = user.gender
             session["avatar"] = user.avatar
+
             flash("Cập nhật hồ sơ thành công!", "success")
         except Exception as e:
             db.session.rollback()
@@ -267,6 +268,11 @@ def profile():
             flash(f"Lỗi khi cập nhật database: {e}", "danger")
 
         return redirect(url_for("auth.profile"))
+
+    session["username"] = user.username
+    session["fullname"] = user.fullname
+    session["gender"] = user.gender
+    session["avatar"] = user.avatar
 
     return render_template("profile.html", user=user)
 
