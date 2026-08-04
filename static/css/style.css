@@ -1897,8 +1897,8 @@ a.reply:hover { color: var(--accent-color) !important; }
     position: fixed;
     bottom: 90px;
     right: 20px;
-    width: 350px;
-    height: 450px;
+    width: 400px;
+    height: 500px;
     background: #1a1a1a;
     border: 1px solid #333;
     border-radius: 15px;
@@ -1968,6 +1968,30 @@ a.reply:hover { color: var(--accent-color) !important; }
     border-radius: 5px;
     font-weight: bold;
     cursor: pointer;
+}
+#bee-chat-box .msg.bot a {
+    color: #007bff !important;
+    font-size: larger;
+    font-weight: bold;
+}
+#bee-chat-box .msg.bot a:hover {
+    color: #0056b3 !important;
+}
+
+#bee-chat-box .msg.bot p,
+#bee-chat-box .msg.bot ul,
+#bee-chat-box .msg.bot ol,
+#bee-chat-box .msg.bot li {
+    margin: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    line-height: 1.2 !important; 
+}
+#bee-chat-box .msg.bot ul {
+    padding-left: 18px !important;
+}
+#bee-chat-box .msg.bot ol > li {
+    margin-bottom: 8px !important;
 }
 .main-nav ul li {
     position: relative !important;
@@ -2164,7 +2188,7 @@ a.reply:hover { color: var(--accent-color) !important; }
     .ticket-info-box { padding: 15px; }
     .method-item { padding: 12px; }
 
-    .modal-content { padding: 20px; max-height: 95vh; }
+    .modal-content { padding: 20px; max-height: 300px; }
     .modal-content img { max-height: 250px; }
 
     .profile-header-container { height: 300px; }

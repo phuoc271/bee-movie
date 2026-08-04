@@ -24,7 +24,7 @@
     </div>
 
     <div id="bee-chat-box">
-        <div class="msg bot">Chào Bạn! Bee đã sẵn sàng hỗ trợ bạn về lịch chiếu và bắp nước đây! 🐝</div>
+        <div class="msg bot">Chào Bạn! Bee đã sẵn sàng hỗ trợ bạn về lịch chiếu và bắp nước đây!</div>
     </div>
 
     <div class="bee-chat-input">
@@ -35,6 +35,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 function toggleBeeChat() {
     const chatWindow = document.getElementById('bee-chat-window');
@@ -44,7 +45,6 @@ function toggleBeeChat() {
     }
 }
 
-// Xử lý nhấn Enter để gửi
 document.getElementById('bee-user-input').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
         e.preventDefault();
@@ -52,18 +52,23 @@ document.getElementById('bee-user-input').addEventListener('keypress', function 
     }
 });
 
-// ... (các đoạn code bên trên giữ nguyên) ...
+const box = document.getElementById('bee-chat-box');
+
+function scrollToBottom() {
+    box.scrollTo({
+        top: box.scrollHeight,
+        behavior: 'smooth'
+    });
+}
 
 document.getElementById('bee-send-btn').addEventListener('click', async () => {
     const input = document.getElementById('bee-user-input');
-    const box = document.getElementById('bee-chat-box');
     if (!input.value.trim()) return;
 
-    // Tin nhắn của bạn (User)
     box.innerHTML += `<div class="msg user">${input.value}</div>`;
     const userMsg = input.value;
     input.value = '';
-    box.scrollTop = box.scrollHeight;
+    scrollToBottom();
 
     try {
         const res = await fetch('/ask', {
@@ -72,18 +77,18 @@ document.getElementById('bee-send-btn').addEventListener('click', async () => {
             body: JSON.stringify({message: userMsg})
         });
 
-        // Tìm đến phần nhận phản hồi từ AI trong chatbot.html
         const data = await res.json();
 
-        // Tạo phần tử div mới cho Bot
         const botMsgDiv = document.createElement('div');
         botMsgDiv.className = 'msg bot';
 
-        // SỬ DỤNG LỆNH REPLACE ĐỂ XÓA DẤU **
-        // / \*\* /g là tìm tất cả các cặp dấu sao, '' là thay thế bằng rỗng
-        const cleanReply = data.reply.replace(/\*\*/g, '');
+        botMsgDiv.innerHTML = marked.parse(data.reply);
 
-        botMsgDiv.innerText = cleanReply; 
+        const links = botMsgDiv.querySelectorAll('a');
+        links.forEach(link => {
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer');
+        });
 
         box.appendChild(botMsgDiv);
         scrollToBottom();
@@ -91,23 +96,11 @@ document.getElementById('bee-send-btn').addEventListener('click', async () => {
     } catch (error) {
         const errorDiv = document.createElement('div');
         errorDiv.className = 'msg bot';
-        errorDiv.innerText = "Lỗi kết nối rồi Khiêm ơi!";
+        errorDiv.innerText = "Lỗi kết nối rồi bạn ơi!";
         box.appendChild(errorDiv);
+        scrollToBottom();
     }
-    
-    // Cuộn xuống cuối cùng sau khi bot trả lời
-    box.scrollTop = box.scrollHeight;
 });
-// Thêm vào trong script hiện tại của bạn
-const box = document.getElementById('bee-chat-box');
-
-// Hàm cuộn mượt
-function scrollToBottom() {
-    box.scrollTo({
-        top: box.scrollHeight,
-        behavior: 'smooth'
-    });
-}
 </script>
 
 </html>
