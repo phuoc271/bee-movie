@@ -2313,3 +2313,8 @@ a.reply:hover { color: var(--accent-color) !important; }
     .avatar-img,
     .header-avatar-img { image-rendering: -webkit-optimize-contrast; }
 }
+.movies-container, .movie-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+    gap: 15px;
+}
