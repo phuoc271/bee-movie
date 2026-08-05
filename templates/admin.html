@@ -557,14 +557,23 @@
                 {% for item in concessions %}
                 <div class="col-md-3">
                     <div class="card-stats text-center h-100 p-3 shadow-sm" style="border: 1px solid #444;">
-                        <img src="{{ url_for('static', filename=item.img) if item.img else url_for('static', filename='images/no-food.png') }}" 
-                            class="img-fluid rounded mb-3" style="height: 350px !important; width: 100%; object-fit: cover;">
+                        
+                        {% if item.img %}
+                            {% if item.img.startswith('http') %}
+                                <img src="{{ item.img }}" class="img-fluid rounded mb-3" style="height: 350px !important; width: 100%; object-fit: cover;">
+                            {% else %}
+                                <img src="{{ url_for('static', filename=item.img) }}" class="img-fluid rounded mb-3" style="height: 350px !important; width: 100%; object-fit: cover;">
+                            {% endif %}
+                        {% else %}
+                            <img src="{{ url_for('static', filename='images/no-food.png') }}" class="img-fluid rounded mb-3" style="height: 350px !important; width: 100%; object-fit: cover;">
+                        {% endif %}
+
                         <h6>{{ item.name }}</h6>
                         <p class="text-warning fw-bold">{{ "{:,.0f}".format(item.price) }}đ</p>
                         
                         <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-outline-secondary w-100" 
-                                    onclick="openConcessionModal('{{ item.id }}', '{{ item.name }}', '{{ item.price }}', '{{ item.img }}', '{{ item.description }}', '{{ item.category }}')">
+                                    onclick='openConcessionModal("{{ item.id }}", {{ item.name | tojson }}, "{{ item.price }}", "{{ item.img }}", {{ (item.description or "") | tojson }}, "{{ item.category }}")'>
                                 Sửa
                             </button>
                             <a href="{{ url_for('admin.delete_concession', id=item.id) }}" 
@@ -582,7 +591,7 @@
     <div class="modal fade" id="concessionModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content bg-dark text-white border-secondary">
-                <form action="{{ url_for('admin.save_concession') }}" method="POST">
+                <form action="{{ url_for('admin.save_concession') }}" method="POST" enctype="multipart/form-data">
                     <div class="modal-header border-secondary">
                         <h5 class="modal-title" id="modalTitle">Sửa sản phẩm</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -607,8 +616,9 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="small text-secondary">Đường dẫn ảnh (trong static/)</label>
-                            <input type="text" name="img" id="form_img" class="form-control bg-dark text-white border-secondary" placeholder="ví dụ: images/popcorn.png">
+                            <label class="small text-secondary">Hình ảnh sản phẩm</label>
+                            <input type="file" name="image_file" id="form_img_file" class="form-control bg-dark text-white border-secondary" accept="image/*">
+                            <small class="text-muted d-block mt-1">Để trống nếu không muốn đổi ảnh mới</small>
                         </div>
                         <div class="mb-3">
                             <label class="small text-secondary">Mô tả ngắn</label>
@@ -833,10 +843,10 @@
                                 class="alert alert-dark border border-secondary small py-2 px-3 mb-3" 
                                 style="display:none; font-size:12px; color:#aaa; line-height:1.8;">
                                 <strong class="text-warning d-block mb-1">Xem lại trước khi tạo:</strong>
-                                <span>🎬 <span id="prev_s_movie">-</span></span><br>
-                                <span>🏢 <span id="prev_s_cinema">-</span> · <span id="prev_s_room">-</span></span><br>
-                                <span>🕐 <span id="prev_s_time">-</span></span><br>
-                                <span>💰 <span id="prev_s_price" class="text-warning fw-bold">-</span></span>
+                                <span><span id="prev_s_movie">-</span></span><br>
+                                <span><span id="prev_s_cinema">-</span> · <span id="prev_s_room">-</span></span><br>
+                                <span><span id="prev_s_time">-</span></span><br>
+                                <span><span id="prev_s_price" class="text-warning fw-bold">-</span></span>
                             </div>
 
                             <button onclick="submitManualShowtime(this)" class="btn btn-warning w-100 fw-bold">
@@ -1461,18 +1471,30 @@
             }
         });
     }
-    function openConcessionModal(id='', name='', price='', img='', desc='', cat='') {
-        document.getElementById('form_id').value = id;
-        document.getElementById('form_name').value = name;
-        document.getElementById('form_price').value = price;
-        document.getElementById('form_img').value = img;
-        document.getElementById('form_desc').value = desc;
-        document.getElementById('form_cat').value = cat;
+    function openConcessionModal(id='', name='', price='', img='', desc='', cat='combo') {
+        const setVal = (elementId, value) => {
+            const el = document.getElementById(elementId);
+            if (el) el.value = value;
+        };
+
+        setVal('form_id', id);
+        setVal('form_name', name);
+        setVal('form_price', price);
+        setVal('form_desc', desc);
+        setVal('form_cat', cat);
         
-        document.getElementById('modalTitle').innerText = id ? "Cập nhật sản phẩm" : "Thêm món mới";
+        setVal('form_img_file', ''); 
         
-        var myModal = new bootstrap.Modal(document.getElementById('concessionModal'));
-        myModal.show();
+        const modalTitle = document.getElementById('modalTitle');
+        if (modalTitle) {
+            modalTitle.innerText = id ? "Cập nhật sản phẩm" : "Thêm món mới";
+        }
+        
+        const modalEl = document.getElementById('concessionModal');
+        if (modalEl) {
+            const myModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+            myModal.show();
+        }
     }
     function handleCancelSubmit(formElement, bookingId) {
         if (!confirm("Xác nhận hủy vé #" + bookingId + "?")) return false;

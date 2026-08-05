@@ -15,10 +15,17 @@ from sqlalchemy.orm import selectinload
 from app.utils.tmdb import tmdb_movie_detail
 from app.controllers.booking_controller import seed_room_for_day
 from dotenv import load_dotenv
-import requests, random
+from werkzeug.utils import secure_filename
+import requests, random, cloudinary, cloudinary.uploader
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 load_dotenv()
+cloudinary.config( 
+    cloud_name = "qjiavter", 
+    api_key = "696798842246352", 
+    api_secret = "s0zXFaI72Po-_a1dTg3QzBZX4a0",
+    secure = True
+)
 @admin_bp.route('/dashboard')
 def admin_dashboard():
     now = datetime.now()
@@ -489,20 +496,38 @@ def toggle_auto_seed():
 def save_concession():
     c_id = request.form.get('id')
     name = request.form.get('name')
-    price = float(request.form.get('price'))
-    img = request.form.get('img')
+    price_val = request.form.get('price')
+    price = float(price_val) if price_val else 0.0
     desc = request.form.get('description')
     cat = request.form.get('category')
 
-    if c_id:
-        item = Concession.query.get(c_id)
-        item.name = name
-        item.price = price
-        item.img = img
-        item.description = desc
-        item.category = cat
+    image_file = request.files.get('image_file')
+    img_path = None
+
+    if image_file and image_file.filename != '':
+        try:
+            upload_result = cloudinary.uploader.upload(
+                image_file,
+                folder="bee_movie/concessions" 
+            )
+            img_path = upload_result.get('secure_url')
+        except Exception as e:
+            print(f"Lỗi upload Cloudinary: {e}")
+
+    if c_id and c_id.strip() != '' and c_id.isdigit():
+        item = Concession.query.get(int(c_id))
+        if item:
+            item.name = name
+            item.price = price
+            item.description = desc
+            item.category = cat
+            if img_path:
+                item.img = img_path
     else:
-        new_item = Concession(name=name, price=price, img=img, description=desc, category=cat)
+        if not img_path:
+            img_path = "https://res.cloudinary.com/qjiavter/image/upload/v1/bee_movie/concessions/default.png"
+            
+        new_item = Concession(name=name, price=price, img=img_path, description=desc, category=cat)
         db.session.add(new_item)
     
     db.session.commit()
