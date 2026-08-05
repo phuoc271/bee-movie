@@ -28,7 +28,16 @@
         style="width: 380px; border-radius: 20px"
       >
         <h3 class="text-center mb-4 text-warning">Đăng nhập</h3>
-
+        <div
+          class="text-dark p-3 rounded mb-3"
+          style="background-color: #ffff99"
+        >
+          <b>Tài khoản để test chức năng admin</b>
+          <br />
+          <b>Email: </b><b style="color: #cc9900">adminbeemovie@gmail.com</b>
+          <br />
+          <b>Password: </b><b style="color: #cc9900">admin123</b>
+        </div>
         {% with messages = get_flashed_messages(with_categories=true) %} {% if
         messages %} {% set category, message = messages[0] %}
         <div class="alert alert-{{ category }}">{{ message }}</div>

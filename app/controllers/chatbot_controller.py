@@ -123,21 +123,29 @@ def call_groq_api(prompt):
         print(f"Lỗi gọi Groq: {e}")
     return "Lỗi: Hệ thống đang bảo trì, vui lòng quay lại sau."
 
-def search_concessions_db(keyword):
-    """Tìm kiếm bắp nước trong Database dựa trên từ khóa"""
+def search_concessions_db(keyword=""):
+    """Lấy menu bắp nước từ DB. Nếu tìm kiếm từ khóa không thấy thì tự động lấy toàn bộ menu"""
     try:
-        sql = "SELECT name, price, description FROM concessions WHERE name LIKE :kw OR description LIKE :kw"
-        result = db.session.execute(db.text(sql), {"kw": f"%{keyword}%"}).fetchall()
+        result = None
         
+        if keyword:
+            sql = "SELECT name, price, description FROM concessions WHERE name LIKE :kw OR description LIKE :kw"
+            result = db.session.execute(text(sql), {"kw": f"%{keyword}%"}).fetchall()
+        
+        if not result:
+            sql = "SELECT name, price, description FROM concessions"
+            result = db.session.execute(text(sql)).fetchall()
+            
         if not result:
             return None
             
-        info = "Dữ liệu tìm thấy trong kho:\n"
+        info = "Dữ liệu bắp nước/combo tại rạp:\n"
         for row in result:
-            info += f"- {row[0]}: {row[1]:,.0f}đ ({row[2]})\n"
+            desc = f" ({row[2]})" if row[2] else ""
+            info += f"- {row[0]}: {row[1]:,.0f}đ{desc}\n"
         return info
     except Exception as e:
-        print(f"Lỗi SQL: {e}")
+        print(f"Lỗi SQL Bắp Nước: {e}")
         return None
     
 @chatbot_bp.route('/chatbot')
@@ -155,7 +163,9 @@ def ask():
     intent = classify_user_intent(user_message)
     
     current_movies = get_current_movies_from_db() if intent == "MOVIE" else ""
-    search_result = search_concessions_db(user_message) if intent == "FOOD" else ""
+    search_result = ""
+    if intent in ["FOOD", "GENERAL"]:
+        search_result = search_concessions_db()
     
     prompt = build_chatbot_prompt(
         user_message=user_message,
