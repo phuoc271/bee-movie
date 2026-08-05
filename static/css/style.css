@@ -1145,7 +1145,6 @@ a.reply:hover { color: var(--accent-color) !important; }
     border: 1px solid #444 !important;
     border-radius: 8px !important;
     padding: 10px 12px !important;
-    min-width: 145px !important;
     text-align: center;
     font-weight: 500;
     display: flex;
@@ -1835,6 +1834,40 @@ a.reply:hover { color: var(--accent-color) !important; }
     }
     .bee-logo-large { 
         font-size: 2.2rem !important; 
+    }
+    .showtime-container .nav-pills {
+        grid-template-columns: repeat(4, 1fr) !important; 
+        gap: 4px !important;
+        padding: 0 !important;
+        margin-bottom: 12px !important;
+    }
+    .showtime-container .btn-date {
+        padding: 6px 10px !important;
+        border-radius: 6px !important;
+    }
+    .showtime-container .weekday {
+        font-size: 11px !important;
+    }
+    .showtime-container .date {
+        font-size: 10px !important;
+    }
+    .cinema-card {
+        padding: 10px !important;
+        margin-bottom: 12px !important;
+    }
+    .cinema-card h5 {
+        font-size: 13px !important;
+        margin-bottom: 8px !important;
+    }
+    .showtime-item .btn {
+        padding: 4px 8px !important;
+    }
+    .showtime-item b {
+        font-size: 0.95rem !important;
+        display: block;
+    }
+    .showtime-item div {
+        font-size: 0.7rem !important; 
     }
 }
 @media (max-width: 480px) {

@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from app.models import Comment, Rating, User, Showtime, Cinema, Room, Concession, MovieExtra, Booking
 from app.extensions import db, cache
 from app.utils.tmdb import fetch_from_tmdb, fetch_movies_list
+from app.controllers.booking_controller import ensure_rolling_window
+from app.models.showtime import SystemConfig
 import google.generativeai as genai
 from dotenv import load_dotenv
 from sqlalchemy import func
@@ -57,6 +59,12 @@ def get_genre_names(genre_ids, genre_map):
 
 @movie_bp.route('/')
 def home():
+    config = SystemConfig.query.filter_by(config_key='auto_seed').first()
+    if not config or config.is_active:
+        ensure_rolling_window(days=7)
+    else:
+        print(">>> TRANG HOME: Đang tắt tự động nên không tạo thêm suất mới.")
+
     genre_map = fetch_genres()
     now_playing_movies_data = fetch_list_cached("movie/now_playing", page=1, language="vi-VN", region="VN")
     upcoming_data = fetch_list_cached("movie/upcoming", page=1, language="vi-VN", region="VN")
