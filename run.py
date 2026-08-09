@@ -23,11 +23,15 @@ def create_app():
         "pool_pre_ping": True, 
         "pool_recycle": 280,   
     }
+    mail_port = int(os.getenv('MAIL_PORT', 465))
+    mail_use_ssl = os.getenv('MAIL_USE_SSL', 'True').lower() in ['true', '1', 't']
+    mail_use_tls = os.getenv('MAIL_USE_TLS', 'False').lower() in ['true', '1', 't']
+
     app.config.update(
         MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com'),
-        MAIL_PORT = int(os.getenv('MAIL_PORT', "465")), 
-        MAIL_USE_TLS = False,                           
-        MAIL_USE_SSL = True,                           
+        MAIL_PORT = mail_port,
+        MAIL_USE_SSL = mail_use_ssl,
+        MAIL_USE_TLS = mail_use_tls,
         MAIL_USERNAME = os.getenv('MAIL_USERNAME'),
         MAIL_PASSWORD = os.getenv('MAIL_PASSWORD'),
         MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
