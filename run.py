@@ -24,11 +24,13 @@ def create_app():
         "pool_recycle": 280,   
     }
     app.config.update(
-        MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com'),
-        MAIL_PORT = int(os.getenv('MAIL_PORT', "587")),
-        MAIL_USE_TLS = True,
+        MAIL_SERVER = 'smtp.gmail.com',
+        MAIL_PORT = 465,
+        MAIL_USE_TLS = False,
+        MAIL_USE_SSL = True,
         MAIL_USERNAME = os.getenv('MAIL_USERNAME'),
-        MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
+        MAIL_PASSWORD = os.getenv('MAIL_PASSWORD'),
+        MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
     )
     app.config["TMDB_API_KEY"] = os.getenv("TMDB_API_KEY")
     app.config["TMDB_BASE_URL"] = os.getenv("TMDB_BASE_URL", "https://api.themoviedb.org/3")
