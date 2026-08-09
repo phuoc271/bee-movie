@@ -9,8 +9,8 @@ from flask_mail import Message
 from datetime import datetime
 import google.auth.transport.requests
 import google.oauth2.id_token
-import threading
-import secrets
+import os
+import time
 import cloudinary.uploader
 from app.extensions import db, mail
 from app.models import User
@@ -155,49 +155,40 @@ def logout():
     flash("Đã đăng xuất!", "info")
     return redirect(url_for('auth.login'))
 
-def send_async_email(app, msg):
-    with app.app_context():
-        try:
-            mail.send(msg)
-            print(">>> GỬI EMAIL THÀNH CÔNG!")
-        except Exception as e:
-            print(f">>> LỖI GỬI EMAIL NỀN: {e}")
-
 @auth_bp.route("/reset_password", methods=["GET", "POST"])
 def reset_password():
     if request.method == "POST":
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email')
         user = get_user_by_email(email)
 
         if user:
+            import secrets
             new_password = secrets.token_hex(4)  
-            
+            user.set_password(new_password)
             try:
-                user.set_password(new_password)
                 db.session.commit()
             except Exception as e:
                 db.session.rollback()
-                current_app.logger.error(f"LỖI DB KHI RESET MẬT KHẨU: {e}")
+                print(f"LỖI DB KHI RESET MẬT KHẨU: {e}")
                 flash("Có lỗi xảy ra, không thể cập nhật mật khẩu.", "danger")
                 return redirect(url_for('auth.reset_password'))
 
-            msg = Message(
-                subject='[Bee Movie] Mật khẩu mới của bạn',
-                sender=current_app.config.get('MAIL_USERNAME'),
-                recipients=[email]
-            )
+            msg = Message('Mật khẩu mới của bạn',
+                        sender=current_app.config.get('MAIL_USERNAME'),
+                        recipients=[email])
             msg.body = f'''Xin chào {user.fullname},
 
 Mật khẩu mới của bạn là: {new_password}
 
-Vui lòng đăng nhập bằng mật khẩu này và đổi lại mật khẩu ngay sau khi đăng nhập.
+Vui lòng đăng nhập bằng mật khẩu này và đổi lại mật khẩu sau khi đăng nhập.
 '''
+            try:
+                mail.send(msg)
+                flash('Mật khẩu mới đã được gửi qua email!', 'info')
+            except Exception as e:
+                print("MAIL SEND ERROR:", e)
+                flash('Gửi email thất bại. Kiểm tra cấu hình SMTP.', 'danger')
 
-            app_obj = current_app._get_current_object()
-            thread = threading.Thread(target=send_async_email, args=(app_obj, msg))
-            thread.start()
-
-            flash('Yêu cầu đã được ghi nhận. Nếu email tồn tại, mật khẩu mới sẽ được gửi trong giây lát!', 'info')
             return redirect(url_for('auth.login'))
         else:
             flash('Email không tồn tại trong hệ thống.', 'danger')

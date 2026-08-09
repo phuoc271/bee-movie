@@ -1,5 +1,5 @@
 import os
-import sys ,socket
+import sys
 import traceback
 import warnings
 import cloudinary
@@ -13,12 +13,6 @@ from app.controllers import register_controllers
 
 warnings.filterwarnings("ignore", category=exc.SAWarning)
 load_dotenv()
-
-_orig_getaddrinfo = socket.getaddrinfo
-def _ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
-    return _orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
-socket.getaddrinfo = _ipv4_only_getaddrinfo
-
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.getenv("APP_SECRET_KEY")
@@ -31,18 +25,18 @@ def create_app():
     }
     app.config.update(
         MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com'),
-        MAIL_PORT = int(os.getenv('MAIL_PORT', "465")),
-        MAIL_USE_TLS = False,
-        MAIL_USE_SSL = True,
+        MAIL_PORT = int(os.getenv('MAIL_PORT', "587")),
+        MAIL_USE_TLS = True,
         MAIL_USERNAME = os.getenv('MAIL_USERNAME'),
-        MAIL_PASSWORD = os.getenv('MAIL_PASSWORD'),
-        MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
+        MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     )
     app.config["TMDB_API_KEY"] = os.getenv("TMDB_API_KEY")
     app.config["TMDB_BASE_URL"] = os.getenv("TMDB_BASE_URL", "https://api.themoviedb.org/3")
     app.config["TMDB_IMAGE_BASE_URL"] = os.getenv("TMDB_IMAGE_BASE_URL", "https://image.tmdb.org/t/p/w500")
     app.config["TMDB_BACKDROP_BASE_URL"] = os.getenv("TMDB_BACKDROP_BASE_URL", "https://image.tmdb.org/t/p/original")
 
+    print(f"[CONFIG] >>> DATABASE_URL: {os.getenv('DATABASE_URL')}")
+    print(f"[CONFIG] >>> MAIL_USERNAME: {os.getenv('MAIL_USERNAME')}")
     cloudinary.config(
         cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"),
         api_key = os.getenv("CLOUDINARY_API_KEY"),
@@ -65,14 +59,17 @@ login_manager.login_message_category = "info"
 def health_check():
     try:
         db.session.execute(text('SELECT 1'))
+        print("[HEALTHCHECK] >>> Kết nối Database OK.")
         return {"status": "ok", "db": "connected"}, 200
     except Exception as e:
+        print(f"[HEALTHCHECK ERROR] >>> Lỗi kết nối DB: {e}")
         return {"status": "error", "message": str(e)}, 500
     
 try:
     register_controllers(app)
+    print("[INIT] >>> Đã đăng ký tất cả Controllers thành công.")
 except Exception:
-    print("LỖI KHI ĐĂNG KÝ CONTROLLERS:")
+    print(f"[ERROR] >>> LỖI KHI ĐĂNG KÝ CONTROLLERS: {e}")
     traceback.print_exc(file=sys.stdout)
 
 def startup_tasks(app):
