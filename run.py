@@ -1,5 +1,5 @@
 import os
-import sys
+import sys ,socket
 import traceback
 import warnings
 import cloudinary
@@ -13,6 +13,12 @@ from app.controllers import register_controllers
 
 warnings.filterwarnings("ignore", category=exc.SAWarning)
 load_dotenv()
+
+_orig_getaddrinfo = socket.getaddrinfo
+def _ipv4_only_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    return _orig_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+socket.getaddrinfo = _ipv4_only_getaddrinfo
+
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.getenv("APP_SECRET_KEY")
@@ -25,9 +31,9 @@ def create_app():
     }
     app.config.update(
         MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com'),
-        MAIL_PORT = 587,
-        MAIL_USE_TLS = True,
-        MAIL_USE_SSL = False,
+        MAIL_PORT = int(os.getenv('MAIL_PORT', "465")),
+        MAIL_USE_TLS = False,
+        MAIL_USE_SSL = True,
         MAIL_USERNAME = os.getenv('MAIL_USERNAME'),
         MAIL_PASSWORD = os.getenv('MAIL_PASSWORD'),
         MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
