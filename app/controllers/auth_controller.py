@@ -156,25 +156,24 @@ def logout():
     return redirect(url_for('auth.login'))
 
 def send_async_email(app, msg):
-    """Hàm gửi email chạy ngầm trên Thread riêng."""
+    """Hàm gửi email chạy nền đảm bảo push đúng App Context."""
     with app.app_context():
         try:
+            print(f">>> [MAIL START] Đang kết nối SMTP gửi cho {msg.recipients}...")
             mail.send(msg)
             print(f">>> [MAIL SUCCESS] Đã gửi mật khẩu mới tới: {msg.recipients}")
         except Exception as e:
-            print(f">>> [MAIL ERROR] Gửi email thất bại: {e}")
-
+            print(f">>> [MAIL ERROR] Lỗi khi gửi mail: {e}")
 
 @auth_bp.route("/reset_password", methods=["GET", "POST"])
 def reset_password():
     if request.method == "POST":
-        email = request.form.get("email")
+        email = request.form.get('email')
         user = get_user_by_email(email)
 
         if user:
             import secrets
-
-            new_password = secrets.token_hex(4)
+            new_password = secrets.token_hex(4)  
             user.set_password(new_password)
             try:
                 db.session.commit()
@@ -182,33 +181,31 @@ def reset_password():
                 db.session.rollback()
                 print(f"LỖI DB KHI RESET MẬT KHẨU: {e}")
                 flash("Có lỗi xảy ra, không thể cập nhật mật khẩu.", "danger")
-                return redirect(url_for("auth.reset_password"))
+                return redirect(url_for('auth.reset_password'))
 
             msg = Message(
-                "Mật khẩu mới của bạn",
-                sender=current_app.config.get("MAIL_USERNAME"),
-                recipients=[email],
+                'Mật khẩu mới của bạn',
+                sender=current_app.config.get('MAIL_USERNAME'),
+                recipients=[email]
             )
-            msg.body = f"""Xin chào {user.fullname},
+            msg.body = f'''Xin chào {user.fullname},
 
 Mật khẩu mới của bạn là: {new_password}
 
 Vui lòng đăng nhập bằng mật khẩu này và đổi lại mật khẩu sau khi đăng nhập.
-"""
-
-            # Bọc luồng gửi mail vào Thread ngầm để phản hồi HTTP lập tức
+'''
+            
+            # Lấy instance app gốc và truyền vào Thread
             app = current_app._get_current_object()
-            threading.Thread(target=send_async_email, args=(app, msg)).start()
+            thr = threading.Thread(target=send_async_email, args=(app, msg))
+            thr.start()
 
-            flash(
-                "Nếu email tồn tại trong hệ thống, mật khẩu mới sẽ được gửi đến hộp thư của bạn.",
-                "info",
-            )
-            return redirect(url_for("auth.login"))
+            flash('Nếu email tồn tại trong hệ thống, mật khẩu mới sẽ được gửi đến hộp thư của bạn.', 'info')
+            return redirect(url_for('auth.login'))
         else:
-            flash("Email không tồn tại trong hệ thống.", "danger")
+            flash('Email không tồn tại trong hệ thống.', 'danger')
 
-    return render_template("reset_request.html")
+    return render_template('reset_request.html')
 
 @auth_bp.route("/change_password", methods=["GET", "POST"])
 def change_password():
