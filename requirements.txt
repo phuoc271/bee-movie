@@ -5,13 +5,14 @@ flask-login
 google-auth-oauthlib
 google-auth
 requests
-PyMySQL 
+PyMySQL
 Flask-SQLAlchemy
 apscheduler
 python-dotenv
 protobuf<5.0.0
-google-generativeai
-scikit-learn 
+google-genai
+numpy<2.0.0
+scikit-learn
 pandas
 gunicorn
 cloudinary

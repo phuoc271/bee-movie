@@ -5,7 +5,7 @@ from app.extensions import db, cache
 from app.utils.tmdb import fetch_from_tmdb, fetch_movies_list
 from app.controllers.booking_controller import ensure_rolling_window
 from app.models.showtime import SystemConfig
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 from sqlalchemy import func
 from sklearn.feature_extraction.text import CountVectorizer
