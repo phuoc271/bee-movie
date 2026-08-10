@@ -1,3 +1,4 @@
+import secrets
 from flask import (
     Blueprint, render_template, request, redirect, url_for, flash, session,
     jsonify, current_app
@@ -9,12 +10,11 @@ from flask_mail import Message
 from datetime import datetime
 import google.auth.transport.requests
 import google.oauth2.id_token
+import threading
 import cloudinary.uploader
 from app.extensions import db, mail
 from app.models import User
 from flask_login import login_user
-from sqlalchemy.exc import OperationalError
-
 auth_bp = Blueprint('auth', __name__)
 
 def get_user_by_email(email):
@@ -156,66 +156,44 @@ def logout():
     return redirect(url_for('auth.login'))
 
 def send_async_email(app, msg):
-    """Hàm gửi email chạy nền đảm bảo push đúng App Context."""
     with app.app_context():
         try:
-            print(f">>> [MAIL START] Đang kết nối SMTP gửi cho {msg.recipients}...")
             mail.send(msg)
-            print(f">>> [MAIL SUCCESS] Đã gửi mật khẩu mới tới: {msg.recipients}")
+            print(">>> [MAIL SUCCESS] Đã gửi mail thành công!")
         except Exception as e:
-            print(f">>> [MAIL ERROR] Lỗi khi gửi mail: {e}")
+            print(f">>> [MAIL ERROR] Không thể gửi mail: {e}")
 
 @auth_bp.route("/reset_password", methods=["GET", "POST"])
 def reset_password():
     if request.method == "POST":
         email = request.form.get('email')
+        
         db.session.remove()
         user = get_user_by_email(email)
-        
+
         if user:
-            import secrets
             new_password = secrets.token_hex(4)  
             user.set_password(new_password)
+            
             try:
                 db.session.commit()
-            except OperationalError:
-                db.session.rollback()
-                try:
-                    db.session.commit()
-                except Exception as e:
-                    db.session.rollback()
-                    print(f"[DB ERROR CRITICAL] {e}")
-                    flash("Lỗi kết nối cơ sở dữ liệu, vui lòng thử lại.", "danger")
-                    return redirect(url_for('auth.reset_password'))
             except Exception as e:
                 db.session.rollback()
-                print(f"[DB ERROR] {e}")
-                flash("Có lỗi xảy ra, không thể cập nhật mật khẩu.", "danger")
+                flash("Lỗi kết nối CSDL, vui lòng thử lại.", "danger")
                 return redirect(url_for('auth.reset_password'))
+
             msg = Message(
                 'Mật khẩu mới của bạn',
                 sender=current_app.config.get('MAIL_USERNAME'),
                 recipients=[email]
             )
-            msg.body = f'''Xin chào {user.fullname},
-
-Mật khẩu mới của bạn là: {new_password}
-
-Vui lòng đăng nhập bằng mật khẩu này và đổi lại mật khẩu sau khi đăng nhập.
-'''
+            msg.body = f"Xin chào {user.fullname},\n\nMật khẩu mới của bạn là: {new_password}\n\nVui lòng đăng nhập và đổi lại mật khẩu."
             
-            try:
-                print(f">>> [MAIL START] Đang gửi mail tới {email}...")
-                mail.send(msg)
-                print(f">>> [MAIL SUCCESS] Đã gửi mật khẩu tới {email}")
-                flash('Mật khẩu mới đã được gửi đến email của bạn.', 'info')
-                return redirect(url_for('auth.login'))
-            except Exception as e:
-                import traceback
-                print(f">>> [MAIL ERROR] Không thể gửi email:")
-                traceback.print_exc()
-                flash('Mật khẩu đã đổi nhưng hệ thống không thể gửi email thông báo. Vui lòng liên hệ Admin.', 'warning')
-                return redirect(url_for('auth.reset_password'))
+            app = current_app._get_current_object()
+            threading.Thread(target=send_async_email, args=(app, msg)).start()
+
+            flash('Yêu cầu đã được tiếp nhận. Mật khẩu mới sẽ được gửi đến email của bạn trong giây lát.', 'info')
+            return redirect(url_for('auth.login'))
         else:
             flash('Email không tồn tại trong hệ thống.', 'danger')
 
