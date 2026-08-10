@@ -18,3 +18,4 @@ gunicorn
 cloudinary
 celery 
 redis 
+resend
