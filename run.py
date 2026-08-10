@@ -30,7 +30,8 @@ def create_app():
         MAIL_USE_SSL = False,  
         MAIL_USERNAME = os.getenv('MAIL_USERNAME'),
         MAIL_PASSWORD = os.getenv('MAIL_PASSWORD'),
-        MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
+        MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME'),
+        MAIL_TIMEOUT = 10
     )
     app.config["TMDB_API_KEY"] = os.getenv("TMDB_API_KEY")
     app.config["TMDB_BASE_URL"] = os.getenv("TMDB_BASE_URL", "https://api.themoviedb.org/3")
@@ -106,7 +107,7 @@ def startup_tasks(app):
                 
                 for sql in updates:
                     try:
-                        db.session.execute(db.text(sql))
+                        db.session.execute(text(sql))
                         db.session.commit()
                     except Exception:
                         db.session.rollback()
