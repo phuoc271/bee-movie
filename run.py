@@ -23,11 +23,15 @@ def create_app():
         "pool_pre_ping": True, 
         "pool_recycle": 280,   
     }
+    mail_port = int(os.getenv('MAIL_PORT', '465'))
+    mail_use_ssl = os.getenv('MAIL_USE_SSL', 'True').lower() in ['true', '1', 't', 'yes']
+    mail_use_tls = os.getenv('MAIL_USE_TLS', 'False').lower() in ['true', '1', 't', 'yes']
+
     app.config.update(
         MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com'),
-        MAIL_PORT = int(os.getenv('MAIL_PORT', "465")), 
-        MAIL_USE_TLS = False,                           
-        MAIL_USE_SSL = True,                           
+        MAIL_PORT = mail_port, 
+        MAIL_USE_TLS = mail_use_tls,                           
+        MAIL_USE_SSL = mail_use_ssl,                           
         MAIL_USERNAME = os.getenv('MAIL_USERNAME'),
         MAIL_PASSWORD = os.getenv('MAIL_PASSWORD'),
         MAIL_DEFAULT_SENDER = os.getenv('MAIL_USERNAME')
@@ -70,7 +74,7 @@ def health_check():
 try:
     register_controllers(app)
     print("[INIT] >>> Đã đăng ký tất cả Controllers thành công.")
-except Exception:
+except Exception as e:
     print(f"[ERROR] >>> LỖI KHI ĐĂNG KÝ CONTROLLERS: {e}")
     traceback.print_exc(file=sys.stdout)
 
@@ -178,12 +182,12 @@ def init_scheduler(app):
             db.session.commit()
 
     scheduler.add_job(cleanup_expired_bookings, 'interval', minutes=1)
-    
     scheduler.start()
 
-with app.app_context():
-    startup_tasks(app)
-    init_scheduler(app)
+if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    with app.app_context():
+        startup_tasks(app)
+        init_scheduler(app)
 
 if __name__ == '__main__':
     debug_mode = os.environ.get("FLASK_ENV", "").lower() == "development"
