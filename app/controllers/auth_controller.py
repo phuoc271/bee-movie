@@ -159,9 +159,6 @@ def logout():
 resend.api_key = os.getenv("RESEND_API_KEY")
 
 def send_async_email(recipient_email, new_password, fullname):
-    """Gửi mail ngầm bằng Resend API qua HTTPS"""
-    print("\n--------------------------------------------------")
-    print(f">>> [THREAD RESEND] Đang gửi mail tới: {recipient_email}...")
     try:
         r = resend.Emails.send({
             "from": "Bee Movie <onboarding@resend.dev>",
@@ -169,41 +166,33 @@ def send_async_email(recipient_email, new_password, fullname):
             "subject": "Mật khẩu mới của bạn - Bee Movie",
             "html": f"""
                 <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #111; color: #fff; border-radius: 8px;">
-                    <h2 style="color: #f39c12;">Bee Movie - Kho khôi phục mật khẩu</h2>
+                    <h2 style="color: #f39c12;">Bee Movie - khôi phục mật khẩu</h2>
                     <p>Xin chào <b>{fullname}</b>,</p>
                     <p>Mật khẩu tạm thời của bạn là: <b style="color: #f39c12; font-size: 20px; background: #222; padding: 4px 8px; border-radius: 4px;">{new_password}</b></p>
                     <p style="color: #aaa; font-size: 13px;">Vui lòng đăng nhập và đổi lại mật khẩu ngay lập tức để bảo mật tài khoản.</p>
                 </div>
             """
         })
-        print(f">>> [RESEND SUCCESS] 🎉 Đã gửi mail thành công! ID: {r.get('id')}")
     except Exception as e:
-        print(f">>> [RESEND ERROR] ❌ Không thể gửi mail qua Resend API: {e}")
         traceback.print_exc()
-    print("--------------------------------------------------\n")
 
 @auth_bp.route("/reset_password", methods=["GET", "POST"])
 def reset_password():
     if request.method == "POST":
         email = request.form.get('email')
-        print(f"\n>>> [RESET DEBUG 1] Nhận Yêu cầu Reset Password cho: '{email}'")
         
         db.session.remove()
         user = User.query.filter_by(email=email).first()
 
         if user:
-            print(f">>> [RESET DEBUG 2] Tìm thấy User trong DB: ID={user.id}, Username={user.username}")
             new_password = secrets.token_hex(4)  
-            print(f">>> [RESET DEBUG 3] Đã tạo mật khẩu mới: {new_password}")
             
             user.set_password(new_password)
             
             try:
                 db.session.commit()
-                print(">>> [RESET DEBUG 4] Đã commit mật khẩu mới vào CSDL thành công!")
             except Exception as e:
                 db.session.rollback()
-                print(f">>> [RESET ERROR] Lỗi commit DB: {e}")
                 flash("Lỗi kết nối CSDL, vui lòng thử lại.", "danger")
                 return redirect(url_for('auth.reset_password'))
 
@@ -211,12 +200,10 @@ def reset_password():
                 target=send_async_email, 
                 args=(email, new_password, user.fullname)
             ).start()
-            print(">>> [RESET DEBUG 5] Đã kích hoạt Thread gửi mail ngầm thành công!")
 
             flash('Yêu cầu đã được tiếp nhận. Mật khẩu mới sẽ được gửi đến email của bạn trong giây lát.', 'info')
             return redirect(url_for('auth.login'))
         else:
-            print(f">>> [RESET WARNING] ⚠️ Không tìm thấy Email '{email}' trong CSDL!")
             flash('Email không tồn tại trong hệ thống.', 'danger')
 
     return render_template('reset_request.html')

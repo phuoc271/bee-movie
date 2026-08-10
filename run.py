@@ -44,8 +44,6 @@ def create_app():
         "pool_size": 10,
         "max_overflow": 5
     }
-    print(f"[CONFIG] >>> DATABASE_URL: {os.getenv('DATABASE_URL')}")
-    print(f"[CONFIG] >>> MAIL_USERNAME: {os.getenv('MAIL_USERNAME')}")
     cloudinary.config(
         cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"),
         api_key = os.getenv("CLOUDINARY_API_KEY"),
@@ -68,17 +66,13 @@ login_manager.login_message_category = "info"
 def health_check():
     try:
         db.session.execute(text('SELECT 1'))
-        print("[HEALTHCHECK] >>> Kết nối Database OK.")
         return {"status": "ok", "db": "connected"}, 200
     except Exception as e:
-        print(f"[HEALTHCHECK ERROR] >>> Lỗi kết nối DB: {e}")
         return {"status": "error", "message": str(e)}, 500
     
 try:
     register_controllers(app)
-    print("[INIT] >>> Đã đăng ký tất cả Controllers thành công.")
 except Exception as e:
-    print(f"[ERROR] >>> LỖI KHI ĐĂNG KÝ CONTROLLERS: {e}")
     traceback.print_exc(file=sys.stdout)
 
 def startup_tasks(app):
@@ -87,7 +81,6 @@ def startup_tasks(app):
         from app.controllers.booking_controller import seed_showtimes_rolling
     except Exception:
         seed_showtimes_rolling = None
-        print("Không import được seed_showtimes_rolling.")
 
     try:
         from app.controllers.movie_controller import fetch_genres as load_genres
