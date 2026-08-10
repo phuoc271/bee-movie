@@ -13,6 +13,8 @@ import cloudinary.uploader
 from app.extensions import db, mail
 from app.models import User
 from flask_login import login_user
+from sqlalchemy.exc import OperationalError
+
 auth_bp = Blueprint('auth', __name__)
 
 def get_user_by_email(email):
@@ -167,20 +169,29 @@ def send_async_email(app, msg):
 def reset_password():
     if request.method == "POST":
         email = request.form.get('email')
+        db.session.remove()
         user = get_user_by_email(email)
-
+        
         if user:
             import secrets
             new_password = secrets.token_hex(4)  
             user.set_password(new_password)
             try:
                 db.session.commit()
+            except OperationalError:
+                db.session.rollback()
+                try:
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"[DB ERROR CRITICAL] {e}")
+                    flash("Lỗi kết nối cơ sở dữ liệu, vui lòng thử lại.", "danger")
+                    return redirect(url_for('auth.reset_password'))
             except Exception as e:
                 db.session.rollback()
-                print(f"[DB ERROR] Không thể cập nhật mật khẩu: {e}")
+                print(f"[DB ERROR] {e}")
                 flash("Có lỗi xảy ra, không thể cập nhật mật khẩu.", "danger")
                 return redirect(url_for('auth.reset_password'))
-
             msg = Message(
                 'Mật khẩu mới của bạn',
                 sender=current_app.config.get('MAIL_USERNAME'),

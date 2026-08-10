@@ -37,7 +37,13 @@ def create_app():
     app.config["TMDB_BASE_URL"] = os.getenv("TMDB_BASE_URL", "https://api.themoviedb.org/3")
     app.config["TMDB_IMAGE_BASE_URL"] = os.getenv("TMDB_IMAGE_BASE_URL", "https://image.tmdb.org/t/p/w500")
     app.config["TMDB_BACKDROP_BASE_URL"] = os.getenv("TMDB_BACKDROP_BASE_URL", "https://image.tmdb.org/t/p/original")
-
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 120,       
+        "pool_timeout": 20,
+        "pool_size": 10,
+        "max_overflow": 5
+    }
     print(f"[CONFIG] >>> DATABASE_URL: {os.getenv('DATABASE_URL')}")
     print(f"[CONFIG] >>> MAIL_USERNAME: {os.getenv('MAIL_USERNAME')}")
     cloudinary.config(
