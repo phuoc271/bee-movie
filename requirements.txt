@@ -16,4 +16,5 @@ scikit-learn
 pandas
 gunicorn
 cloudinary
-celery redis 
+celery 
+redis 
