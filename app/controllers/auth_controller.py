@@ -1,4 +1,5 @@
 import secrets
+import traceback
 from flask import (
     Blueprint, render_template, request, redirect, url_for, flash, session,
     jsonify, current_app
@@ -156,45 +157,69 @@ def logout():
     return redirect(url_for('auth.login'))
 
 def send_async_email(app, msg):
+    print("\n--------------------------------------------------")
+    print(">>> [THREAD DEBUG 1] Bắt đầu Thread gửi email...")
     with app.app_context():
+        # Kiểm tra các thông số cấu hình Mail thực tế
+        print(f">>> [THREAD DEBUG 2] MAIL_SERVER: {app.config.get('MAIL_SERVER')}")
+        print(f">>> [THREAD DEBUG 2] MAIL_PORT: {app.config.get('MAIL_PORT')}")
+        print(f">>> [THREAD DEBUG 2] MAIL_USE_SSL: {app.config.get('MAIL_USE_SSL')}")
+        print(f">>> [THREAD DEBUG 2] MAIL_USE_TLS: {app.config.get('MAIL_USE_TLS')}")
+        print(f">>> [THREAD DEBUG 2] MAIL_USERNAME: {app.config.get('MAIL_USERNAME')}")
+        print(f">>> [THREAD DEBUG 3] Đang gửi mail tới: {msg.recipients}...")
         try:
             mail.send(msg)
-            print(">>> [MAIL SUCCESS] Đã gửi mail thành công!")
+            print(">>> [MAIL SUCCESS] 🎉 Đã gửi mail thành công!")
         except Exception as e:
-            print(f">>> [MAIL ERROR] Không thể gửi mail: {e}")
+            print(f">>> [MAIL ERROR] ❌ Không thể gửi mail: {e}")
+            print("--- TRACEBACK LỖI CHI TIẾT ---")
+            traceback.print_exc()
+            print("------------------------------")
+    print("--------------------------------------------------\n")
 
 @auth_bp.route("/reset_password", methods=["GET", "POST"])
 def reset_password():
     if request.method == "POST":
         email = request.form.get('email')
+        print(f"\n>>> [RESET DEBUG 1] Nhận Yêu cầu Reset Password cho: '{email}'")
         
         db.session.remove()
         user = get_user_by_email(email)
 
         if user:
+            print(f">>> [RESET DEBUG 2] Tìm thấy User trong DB: ID={user.id}, Username={user.username}")
             new_password = secrets.token_hex(4)  
+            print(f">>> [RESET DEBUG 3] Đã tạo mật khẩu mới: {new_password}")
+            
             user.set_password(new_password)
             
             try:
                 db.session.commit()
+                print(">>> [RESET DEBUG 4] Đã commit mật khẩu mới vào CSDL thành công!")
             except Exception as e:
                 db.session.rollback()
+                print(f">>> [RESET ERROR] Lỗi commit DB: {e}")
                 flash("Lỗi kết nối CSDL, vui lòng thử lại.", "danger")
                 return redirect(url_for('auth.reset_password'))
 
+            sender_email = current_app.config.get('MAIL_USERNAME')
+            print(f">>> [RESET DEBUG 5] Chuẩn bị gửi email từ SENDER: '{sender_email}'")
+
             msg = Message(
                 'Mật khẩu mới của bạn',
-                sender=current_app.config.get('MAIL_USERNAME'),
+                sender=sender_email,
                 recipients=[email]
             )
             msg.body = f"Xin chào {user.fullname},\n\nMật khẩu mới của bạn là: {new_password}\n\nVui lòng đăng nhập và đổi lại mật khẩu."
             
             app = current_app._get_current_object()
             threading.Thread(target=send_async_email, args=(app, msg)).start()
+            print(">>> [RESET DEBUG 6] Đã kích hoạt Thread gửi mail ngầm thành công!")
 
             flash('Yêu cầu đã được tiếp nhận. Mật khẩu mới sẽ được gửi đến email của bạn trong giây lát.', 'info')
             return redirect(url_for('auth.login'))
         else:
+            print(f">>> [RESET WARNING] ⚠️ Không tìm thấy Email '{email}' trong CSDL!")
             flash('Email không tồn tại trong hệ thống.', 'danger')
 
     return render_template('reset_request.html')
