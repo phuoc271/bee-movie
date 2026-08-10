@@ -177,7 +177,7 @@ def reset_password():
                 db.session.commit()
             except Exception as e:
                 db.session.rollback()
-                print(f"LỖI DB KHI RESET MẬT KHẨU: {e}")
+                print(f"[DB ERROR] Không thể cập nhật mật khẩu: {e}")
                 flash("Có lỗi xảy ra, không thể cập nhật mật khẩu.", "danger")
                 return redirect(url_for('auth.reset_password'))
 
@@ -194,16 +194,17 @@ Vui lòng đăng nhập bằng mật khẩu này và đổi lại mật khẩu s
 '''
             
             try:
-                print(f">>> [MAIL START] Đang kết nối SMTP gửi cho {email}...")
+                print(f">>> [MAIL START] Đang gửi mail tới {email}...")
                 mail.send(msg)
-                print(f">>> [MAIL SUCCESS] Đã gửi mật khẩu mới tới: {email}")
+                print(f">>> [MAIL SUCCESS] Đã gửi mật khẩu tới {email}")
                 flash('Mật khẩu mới đã được gửi đến email của bạn.', 'info')
+                return redirect(url_for('auth.login'))
             except Exception as e:
-                print(f">>> [MAIL ERROR] Lỗi khi gửi mail thực tế: {e}")
-                flash(f"Không thể gửi email khôi phục: {e}", "danger")
+                import traceback
+                print(f">>> [MAIL ERROR] Không thể gửi email:")
+                traceback.print_exc()
+                flash('Mật khẩu đã đổi nhưng hệ thống không thể gửi email thông báo. Vui lòng liên hệ Admin.', 'warning')
                 return redirect(url_for('auth.reset_password'))
-
-            return redirect(url_for('auth.login'))
         else:
             flash('Email không tồn tại trong hệ thống.', 'danger')
 
