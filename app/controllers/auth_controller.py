@@ -9,8 +9,6 @@ from flask_mail import Message
 from datetime import datetime
 import google.auth.transport.requests
 import google.oauth2.id_token
-import os
-import threading
 import cloudinary.uploader
 from app.extensions import db, mail
 from app.models import User
@@ -195,12 +193,16 @@ Mật khẩu mới của bạn là: {new_password}
 Vui lòng đăng nhập bằng mật khẩu này và đổi lại mật khẩu sau khi đăng nhập.
 '''
             
-            # Lấy instance app gốc và truyền vào Thread
-            app = current_app._get_current_object()
-            thr = threading.Thread(target=send_async_email, args=(app, msg))
-            thr.start()
+            try:
+                print(f">>> [MAIL START] Đang kết nối SMTP gửi cho {email}...")
+                mail.send(msg)
+                print(f">>> [MAIL SUCCESS] Đã gửi mật khẩu mới tới: {email}")
+                flash('Mật khẩu mới đã được gửi đến email của bạn.', 'info')
+            except Exception as e:
+                print(f">>> [MAIL ERROR] Lỗi khi gửi mail thực tế: {e}")
+                flash(f"Không thể gửi email khôi phục: {e}", "danger")
+                return redirect(url_for('auth.reset_password'))
 
-            flash('Nếu email tồn tại trong hệ thống, mật khẩu mới sẽ được gửi đến hộp thư của bạn.', 'info')
             return redirect(url_for('auth.login'))
         else:
             flash('Email không tồn tại trong hệ thống.', 'danger')
