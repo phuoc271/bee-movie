@@ -60,10 +60,10 @@ def get_genre_names(genre_ids, genre_map):
 @movie_bp.route('/')
 def home():
     config = SystemConfig.query.filter_by(config_key='auto_seed').first()
-    if not config or config.is_active:
-        ensure_rolling_window(days=7)
-    else:
-        print(">>> TRANG HOME: Đang tắt tự động nên không tạo thêm suất mới.")
+    # if not config or config.is_active:
+    #     ensure_rolling_window(days=7)
+    # else:
+    #     print(">>> TRANG HOME: Đang tắt tự động nên không tạo thêm suất mới.")
 
     genre_map = fetch_genres()
     now_playing_movies_data = fetch_list_cached("movie/now_playing", page=1, language="vi-VN", region="VN")
