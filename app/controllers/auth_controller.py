@@ -1,5 +1,5 @@
 import secrets , os
-import traceback ,resend
+import traceback ,resend , smtplib
 from flask import (
     Blueprint, render_template, request, redirect, url_for, flash, session,
     jsonify, current_app
@@ -16,6 +16,8 @@ import cloudinary.uploader
 from app.extensions import db, mail
 from app.models import User
 from flask_login import login_user
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 auth_bp = Blueprint('auth', __name__)
 
 def get_user_by_email(email):
@@ -159,21 +161,36 @@ def logout():
 resend.api_key = os.getenv("RESEND_API_KEY")
 
 def send_async_email(recipient_email, new_password, fullname):
+    sender_email = os.getenv("MAIL_USERNAME")
+    sender_password = os.getenv("MAIL_PASSWORD") 
+
+    if not sender_email or not sender_password:
+        print("Lỗi: Thiếu cấu hình MAIL_USERNAME hoặc MAIL_PASSWORD trong .env")
+        return
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Mật khẩu mới của bạn - Bee Movie"
+    msg["From"] = f"Bee Movie <{sender_email}>"
+    msg["To"] = recipient_email
+
+    html_content = f"""
+        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #111; color: #fff; border-radius: 8px;">
+            <h2 style="color: #f39c12;">Bee Movie - khôi phục mật khẩu</h2>
+            <p>Xin chào <b>{fullname}</b>,</p>
+            <p>Mật khẩu tạm thời của bạn là: <b style="color: #f39c12; font-size: 20px; background: #222; padding: 4px 8px; border-radius: 4px;">{new_password}</b></p>
+            <p style="color: #aaa; font-size: 13px;">Vui lòng đăng nhập và đổi lại mật khẩu ngay lập tức để bảo mật tài khoản.</p>
+        </div>
+    """
+    msg.attach(MIMEText(html_content, "html", "utf-8"))
+
     try:
-        r = resend.Emails.send({
-            "from": "Bee Movie <onboarding@resend.dev>",
-            "to": [recipient_email],
-            "subject": "Mật khẩu mới của bạn - Bee Movie",
-            "html": f"""
-                <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #111; color: #fff; border-radius: 8px;">
-                    <h2 style="color: #f39c12;">Bee Movie - khôi phục mật khẩu</h2>
-                    <p>Xin chào <b>{fullname}</b>,</p>
-                    <p>Mật khẩu tạm thời của bạn là: <b style="color: #f39c12; font-size: 20px; background: #222; padding: 4px 8px; border-radius: 4px;">{new_password}</b></p>
-                    <p style="color: #aaa; font-size: 13px;">Vui lòng đăng nhập và đổi lại mật khẩu ngay lập tức để bảo mật tài khoản.</p>
-                </div>
-            """
-        })
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, recipient_email, msg.as_bytes())
+        print(f"Đã gửi email thành công tới: {recipient_email}")
     except Exception as e:
+        print(f"Lỗi gửi mail SMTP: {e}")
         traceback.print_exc()
 
 @auth_bp.route("/reset_password", methods=["GET", "POST"])
