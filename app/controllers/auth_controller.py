@@ -162,22 +162,27 @@ def send_async_email(recipient_email, new_password, fullname):
             <p style="color: #aaa; font-size: 13px;">Vui lòng đăng nhập và đổi lại mật khẩu ngay lập tức để bảo mật tài khoản.</p>
         </div>
     """
+    api_key = os.getenv("BREVO_API_KEY")
+    sender_email = os.getenv("BREVO_SENDER_EMAIL")
+    print(f"DEBUG: API key present: {bool(api_key)}, len={len(api_key) if api_key else 0}")
+    print(f"DEBUG: Sender email: {sender_email}")
     try:
         response = requests.post(
             "https://api.brevo.com/v3/smtp/email",
             headers={
                 "accept": "application/json",
-                "api-key": os.getenv("BREVO_API_KEY"),
+                "api-key": api_key,
                 "content-type": "application/json",
             },
             json={
-                "sender": {"name": "Bee Movie", "email": os.getenv("BREVO_SENDER_EMAIL")},
+                "sender": {"name": "Bee Movie", "email": sender_email},
                 "to": [{"email": recipient_email, "name": fullname}],
                 "subject": "Mật khẩu mới của bạn - Bee Movie",
                 "htmlContent": html_content,
             },
             timeout=10,
         )
+        print(f"DEBUG: Brevo response status: {response.status_code}, body: {response.text}")
         response.raise_for_status()
         print(f"Đã gửi email thành công tới: {recipient_email}")
     except Exception as e:
