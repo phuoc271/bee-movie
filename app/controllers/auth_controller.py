@@ -1,5 +1,5 @@
 import secrets , os
-import traceback ,resend 
+import traceback ,requests
 from flask import (
     Blueprint, render_template, request, redirect, url_for, flash, session,
     jsonify, current_app
@@ -152,7 +152,6 @@ def logout():
     flash("Đã đăng xuất!", "info")
     return redirect(url_for('auth.login'))
 
-resend.api_key = os.getenv("RESEND_API_KEY")
 
 def send_async_email(recipient_email, new_password, fullname):
     html_content = f"""
@@ -164,15 +163,25 @@ def send_async_email(recipient_email, new_password, fullname):
         </div>
     """
     try:
-        resend.Emails.send({
-            "from": "Bee Movie <onboarding@resend.dev>", 
-            "to": [recipient_email],
-            "subject": "Mật khẩu mới của bạn - Bee Movie",
-            "html": html_content,
-        })
+        response = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers={
+                "accept": "application/json",
+                "api-key": os.getenv("BREVO_API_KEY"),
+                "content-type": "application/json",
+            },
+            json={
+                "sender": {"name": "Bee Movie", "email": os.getenv("BREVO_SENDER_EMAIL")},
+                "to": [{"email": recipient_email, "name": fullname}],
+                "subject": "Mật khẩu mới của bạn - Bee Movie",
+                "htmlContent": html_content,
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
         print(f"Đã gửi email thành công tới: {recipient_email}")
     except Exception as e:
-        print(f"Lỗi gửi mail qua Resend: {e}")
+        print(f"Lỗi gửi mail qua Brevo: {e}")
         traceback.print_exc()
 
 @auth_bp.route("/reset_password", methods=["GET", "POST"])
