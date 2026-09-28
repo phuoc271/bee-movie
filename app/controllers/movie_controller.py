@@ -11,7 +11,8 @@ from sqlalchemy import func
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from flask_login import current_user
-import json, os, re, random, pandas as pd
+import json, os, re, random, pandas as pd, requests
+import google.generativeai as genai
 
 movie_bp = Blueprint('movie', __name__)
 
@@ -698,35 +699,102 @@ def cinemas(cinema_id=None):
                         date_tabs=date_tabs)
 
 API_KEYS_STR = os.getenv("GEMINI_API_KEY", "")
-API_KEYS_LIST = [key.strip() for key in API_KEYS_STR.split(",") if key.strip()]
+API_KEYS_LIST = [k.strip() for k in API_KEYS_STR.split(",") if k.strip()]
+
+GROQ_KEYS_STR = os.getenv("GROQ_API_KEYS", "")
+GROQ_KEYS_LIST = [k.strip() for k in GROQ_KEYS_STR.split(",") if k.strip()]
+
+GEMINI_MODEL = "gemini-3.6-flash"
+GROQ_MODEL = "qwen/qwen3.8-27b"
+
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+
+def list_available_models():
+    if API_KEYS_LIST:
+        try:
+            genai.configure(api_key=API_KEYS_LIST[0])
+            print("[Gemini] Model dùng được:")
+            for m in genai.list_models():
+                if "generateContent" in m.supported_generation_methods:
+                    print("  -", m.name)
+        except Exception as e:
+            print(f"[Gemini] Không liệt kê được model: {e}")
+
+    if GROQ_KEYS_LIST:
+        try:
+            r = requests.get(
+                "https://api.groq.com/openai/v1/models",
+                headers={"Authorization": f"Bearer {GROQ_KEYS_LIST[0]}"},
+                timeout=10,
+            )
+            print(f"[Groq] HTTP {r.status_code}")
+            if r.ok:
+                print("[Groq] Model dùng được:")
+                for m in r.json().get("data", []):
+                    print("  -", m["id"])
+            else:
+                print(r.text)
+        except Exception as e:
+            print(f"[Groq] Không liệt kê được model: {e}")
+
+
+def _parse_score(raw_text):
+    clean = raw_text.replace("```json", "").replace("```", "").strip()
+    data = json.loads(clean)
+    score = float(data.get("score", 0.0))
+    return max(-1.0, min(1.0, score))  
+
 
 def analyze_sentiment(comment_text):
-    if not API_KEYS_LIST:
-        print("!!! Lỗi: Không tìm thấy API Key nào trong biến môi trường.")
-        return 0.0
-
-    selected_key = random.choice(API_KEYS_LIST)
-    genai.configure(api_key=selected_key)
-    
-    model = genai.GenerativeModel('gemini-3-flash-preview') 
-    
     prompt = f"""
     Phân tích cảm xúc bình luận phim: "{comment_text}"
     Trả về duy nhất JSON: {{"score": float}}
     Score từ -1.0 đến 1.0. Chỉ trả về JSON.
     """
-    
-    try:
-        response = model.generate_content(
-            prompt, 
-            generation_config={"response_mime_type": "application/json"}
-        )
-        
-        data = json.loads(response.text)
-        return float(data.get('score', 0.0))
-    except Exception as e:
-        print(f"Lỗi với Key {selected_key[:10]}... : {e}")
-        return 0.0
+
+    gemini_keys = API_KEYS_LIST[:]
+    random.shuffle(gemini_keys)
+    for key in gemini_keys:
+        try:
+            genai.configure(api_key=key)
+            model = genai.GenerativeModel(GEMINI_MODEL)
+            response = model.generate_content(
+                prompt,
+                generation_config={"response_mime_type": "application/json"},
+            )
+            return _parse_score(response.text)
+        except Exception as e:
+            print(f"[Gemini Error] Key {key[:10]}... model={GEMINI_MODEL}: {e}")
+
+    groq_keys = GROQ_KEYS_LIST[:]
+    random.shuffle(groq_keys)
+    for key in groq_keys:
+        try:
+            headers = {
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": GROQ_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "response_format": {"type": "json_object"},
+                "temperature": 0.2,
+            }
+            response = requests.post(GROQ_URL, headers=headers, json=payload, timeout=15)
+
+            if not response.ok:
+                print(f"[Groq Error] Key {key[:10]}... model={GROQ_MODEL} "
+                      f"HTTP {response.status_code}: {response.text}")
+                continue
+
+            content = response.json()["choices"][0]["message"]["content"]
+            return _parse_score(content)
+        except Exception as e:
+            print(f"[Groq Error] Key {key[:10]}...: {e}")
+
+    print("!!! Cả Gemini và Groq đều không xử lý được.")
+    return 0.0
 
 def get_personalized_recommendations(user_id, movies_from_showtimes):
     user_bookings = Booking.query.filter_by(user_id=user_id).all()

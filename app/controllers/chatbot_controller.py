@@ -27,7 +27,7 @@ def call_ai_api(prompt):
             "Content-Type": "application/json"
         }
         payload = {
-            "model": "llama-3.3-70b-versatile",
+            "model": "qwen/qwen3.8-27b",
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.3
         }
@@ -78,7 +78,7 @@ def call_gemini_api(prompt):
         return call_groq_api(prompt)
     
     current_key = random.choice(keys)
-    model_candidates = ["gemini-flash-latest", "gemini-2.0-flash-lite", "gemini-pro-latest"]
+    model_candidates = ["gemini-3.6-flash", "gemini-2.0-flash-lite", "gemini-pro-latest"]
     
     for model_name in model_candidates:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={current_key}"
@@ -110,7 +110,7 @@ def call_groq_api(prompt):
         "Content-Type": "application/json"
     }
     payload = {
-        "model": "llama-3.3-70b-versatile",
+        "model": "qwen/qwen3.8-27b",
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.3
     }
